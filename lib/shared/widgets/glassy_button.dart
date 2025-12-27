@@ -50,7 +50,7 @@ class GlassyButton extends StatelessWidget {
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
-                              color: Colors.white,
+                              color: Colors.black,
                               strokeWidth: 2,
                             ),
                           ),
@@ -60,13 +60,13 @@ class GlassyButton extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (icon != null) ...[
-                              Icon(icon, color: Colors.white, size: 20),
+                              Icon(icon, color: Colors.black, size: 20),
                               const SizedBox(width: 8),
                             ],
                             Text(
                               text,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: Colors.black,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),

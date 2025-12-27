@@ -28,11 +28,7 @@ class _LeftZoneDetailScreenState extends State<LeftZoneDetailScreen> {
       final icon = SocialBarOverlays.getIcon(label);
 
       return overlay.copyWith(
-        customWidget: InteractiveOverlayArea(
-          overlay: overlay,
-          isCircular: isCircular,
-          color: color,
-          icon: icon,
+        customWidget: GestureDetector(
           onTap: () {
             // Handle tap for each overlay
             switch (label) {
@@ -79,6 +75,9 @@ class _LeftZoneDetailScreenState extends State<LeftZoneDetailScreen> {
                 );
             }
           },
+          child: Container(
+            color: Colors.transparent,
+          ),
         ),
       );
     }).toList();

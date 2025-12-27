@@ -31,10 +31,10 @@ class _SelectTeamScreenState extends State<SelectTeamScreen> {
   bool _isLoading = false;
 
   final List<Map<String, dynamic>> _teams = [
-    {'name': 'Team A', 'color': Colors.red, 'icon': Icons.group},
-    {'name': 'Team B', 'color': Colors.blue, 'icon': Icons.group},
-    {'name': 'Team C', 'color': Colors.green, 'icon': Icons.group},
-    {'name': 'Team D', 'color': Colors.orange, 'icon': Icons.group},
+    {'name': 'Kansas City', 'color': Colors.red, 'icon': Icons.group},
+    {'name': 'Denver', 'color': Colors.blue, 'icon': Icons.group},
+    {'name': 'Las Vegas', 'color': Colors.green, 'icon': Icons.group},
+    {'name': 'Los Angeles', 'color': Colors.orange, 'icon': Icons.group},
   ];
 
   Future<void> _handleNext() async {

@@ -16,6 +16,9 @@ class AppAssets {
   /// Placeholder for news articles
   static const String newsPlaceholder = 'assets/images/news_placeholder.png';
 
+  /// Main office building image
+  static const String mainOffice = 'assets/images/main_office.png';
+
   // ==================== Icons ====================
 
   /// Custom icons can be added here

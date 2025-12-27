@@ -30,7 +30,7 @@ class MarketplaceOverlays {
   static BuildingOverlay get rightTopZone => const BuildingOverlay(
         left: 0.79,
         top: 0.2,  // Moved up from 0.10
-        width: 0.12,
+        width: 0.14,
         height: 0.35,
         label: 'Hall of Fame',
       );
@@ -42,6 +42,15 @@ class MarketplaceOverlays {
         width: 0.10,
         height: 0.50,
         label: 'Office Building',
+      );
+
+  /// Office Building 2 - Tall vertical rectangle (top left)
+  static BuildingOverlay get topLeftOffice => const BuildingOverlay(
+        left: 0.07,
+        top: 0.05,
+        width: 0.12,
+        height: 0.19,
+        label: 'Office Building 2',
       );
 
   /// News Stall - Small circular button (bottom right corner)
@@ -59,6 +68,7 @@ class MarketplaceOverlays {
     'Training Ground': true, // Circular
     'Hall of Fame': false, // Rectangular
     'Office Building': false, // Rectangular
+    'Office Building 2': false, // Rectangular
     'News Stall': true, // Circular
   };
 
@@ -68,6 +78,7 @@ class MarketplaceOverlays {
     'Training Ground': Colors.blue,
     'Hall of Fame': Colors.teal,
     'Office Building': Colors.orange,
+    'Office Building 2': Colors.amber,
     'News Stall': Colors.pink,
   };
 
@@ -77,6 +88,7 @@ class MarketplaceOverlays {
     'Training Ground': Icons.hub,
     'Hall of Fame': Icons.category,
     'Office Building': Icons.widgets,
+    'Office Building 2': Icons.business,
     'News Stall': Icons.touch_app,
   };
 
@@ -86,6 +98,7 @@ class MarketplaceOverlays {
         centerHub,
         rightTopZone,
         rightBottomZone,
+        topLeftOffice,
         bottomRightAction,
       ];
 

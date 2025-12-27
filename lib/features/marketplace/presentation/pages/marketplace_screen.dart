@@ -48,6 +48,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         case 'Office Building':
           route = AppRoutes.rightBottomZoneDetail;
           break;
+        case 'Office Building 2':
+          route = AppRoutes.rightBottomZoneDetail;
+          break;
         case 'News Stall':
           route = AppRoutes.bottomRightActionDetail;
           break;
@@ -56,12 +59,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       }
 
       return overlay.copyWith(
-        customWidget: InteractiveOverlayArea(
-          overlay: overlay,
-          isCircular: isCircular,
-          color: color,
-          icon: icon,
+        customWidget: GestureDetector(
           onTap: () => Navigator.pushNamed(context, route),
+          child: Container(
+            color: Colors.transparent,
+          ),
         ),
       );
     }).toList();
