@@ -30,7 +30,7 @@ class MarketplaceOverlays {
   static BuildingOverlay get rightTopZone => const BuildingOverlay(
         left: 0.79,
         top: 0.2,  // Moved up from 0.10
-        width: 0.12,
+        width: 0.14,
         height: 0.35,
         label: 'Hall of Fame',
       );
@@ -44,6 +44,15 @@ class MarketplaceOverlays {
         label: 'Office Building',
       );
 
+  /// Office Building 2 - Tall vertical rectangle (top left)
+  static BuildingOverlay get topLeftOffice => const BuildingOverlay(
+        left: 0.07,
+        top: 0.05,
+        width: 0.12,
+        height: 0.19,
+        label: 'Office Building 2',
+      );
+
   /// News Stall - Small circular button (bottom right corner)
   static BuildingOverlay get bottomRightAction => const BuildingOverlay(
         left: 0.61,
@@ -53,13 +62,34 @@ class MarketplaceOverlays {
         label: 'News Stall',
       );
 
+  /// Screenbook - Interactive area
+  static BuildingOverlay get screenbook => const BuildingOverlay(
+        left: 0.64,
+        top: 0.32,
+        width: 0.14,
+        height: 0.205,
+        label: 'Screenbook',
+      );
+
+  /// Office - Top left area
+  static BuildingOverlay get topLeftOffice2 => const BuildingOverlay(
+        left: 0.11,
+        top: 0.035,
+        width: 0.15,
+        height: 0.25,
+        label: 'office',
+      );
+
   /// Map of overlay names to their circular/rectangular shape
   static const Map<String, bool> shapeMap = {
     'Social Bar': false, // Rectangular
     'Training Ground': true, // Circular
     'Hall of Fame': false, // Rectangular
     'Office Building': false, // Rectangular
+    'Office Building 2': false, // Rectangular
     'News Stall': true, // Circular
+    'Screenbook': false, // Rectangular
+    'office': false, // Rectangular
   };
 
   /// Map of overlay names to their colors
@@ -68,7 +98,10 @@ class MarketplaceOverlays {
     'Training Ground': Colors.blue,
     'Hall of Fame': Colors.teal,
     'Office Building': Colors.orange,
+    'Office Building 2': Colors.amber,
     'News Stall': Colors.pink,
+    'Screenbook': Colors.green,
+    'office': Colors.blueGrey,
   };
 
   /// Map of overlay names to their icons
@@ -77,7 +110,10 @@ class MarketplaceOverlays {
     'Training Ground': Icons.hub,
     'Hall of Fame': Icons.category,
     'Office Building': Icons.widgets,
+    'Office Building 2': Icons.business,
     'News Stall': Icons.touch_app,
+    'Screenbook': Icons.menu_book,
+    'office': Icons.apartment,
   };
 
   /// Get all overlays as a list
@@ -86,7 +122,10 @@ class MarketplaceOverlays {
         centerHub,
         rightTopZone,
         rightBottomZone,
+        topLeftOffice,
         bottomRightAction,
+        screenbook,
+        topLeftOffice2,
       ];
 
   /// Check if an overlay should be circular

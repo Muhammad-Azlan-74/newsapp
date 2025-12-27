@@ -4,7 +4,8 @@ import 'package:newsapp/shared/widgets/image_relative_background.dart';
 import 'package:newsapp/shared/widgets/building_overlay.dart';
 import 'package:newsapp/core/constants/socialbar_overlay_coordinates.dart';
 import 'package:newsapp/features/marketplace/presentation/widgets/interactive_overlay_area.dart';
-import 'package:newsapp/shared/widgets/webview_screen.dart';
+import 'package:newsapp/shared/widgets/webview_dialog.dart';
+import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 
 /// Social Bar Detail Screen
 ///
@@ -28,47 +29,37 @@ class _LeftZoneDetailScreenState extends State<LeftZoneDetailScreen> {
       final icon = SocialBarOverlays.getIcon(label);
 
       return overlay.copyWith(
-        customWidget: InteractiveOverlayArea(
-          overlay: overlay,
-          isCircular: isCircular,
-          color: color,
-          icon: icon,
+        customWidget: GestureDetector(
           onTap: () {
             // Handle tap for each overlay
             switch (label) {
               case 'TV':
-                // Navigate to Twitter in webview
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const WebViewScreen(
-                      url: 'https://twitter.com',
-                      title: 'Twitter',
-                    ),
+                // Show Twitter in dialog
+                showDialog(
+                  context: context,
+                  builder: (context) => const WebViewDialog(
+                    url: 'https://twitter.com',
+                    title: 'Twitter',
                   ),
                 );
                 break;
               case 'Window':
-                // Navigate to The New Heights podcast
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const WebViewScreen(
-                      url: 'https://www.youtube.com/@newheightshow',
-                      title: 'The New Heights',
-                    ),
+                // Show The New Heights podcast in dialog
+                showDialog(
+                  context: context,
+                  builder: (context) => const WebViewDialog(
+                    url: 'https://www.youtube.com/@newheightshow',
+                    title: 'The New Heights',
                   ),
                 );
                 break;
               case 'Board':
-                // Navigate to NFL Memes Instagram profile
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const WebViewScreen(
-                      url: 'https://www.instagram.com/nflmemes_ig/',
-                      title: 'NFL Memes',
-                    ),
+                // Show NFL Memes Instagram profile in dialog
+                showDialog(
+                  context: context,
+                  builder: (context) => const WebViewDialog(
+                    url: 'https://www.instagram.com/nflmemes_ig/',
+                    title: 'NFL Memes',
                   ),
                 );
                 break;
@@ -79,6 +70,9 @@ class _LeftZoneDetailScreenState extends State<LeftZoneDetailScreen> {
                 );
             }
           },
+          child: Container(
+            color: Colors.transparent,
+          ),
         ),
       );
     }).toList();
@@ -87,11 +81,21 @@ class _LeftZoneDetailScreenState extends State<LeftZoneDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ImageRelativeBackground(
-        imagePath: 'assets/images/social_bar.png',
-        opacity: AppConstants.dashboardBackgroundOpacity,
-        overlays: _buildOverlays(),
-        child: Container(),
+      body: Stack(
+        children: [
+          ImageRelativeBackground(
+            imagePath: 'assets/images/social_bar.png',
+            opacity: AppConstants.dashboardBackgroundOpacity,
+            overlays: _buildOverlays(),
+            child: Container(),
+          ),
+          // Back button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 10,
+            child: const GlassyBackButton(),
+          ),
+        ],
       ),
     );
   }

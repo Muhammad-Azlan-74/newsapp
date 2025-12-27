@@ -10,6 +10,7 @@ class GlassyButton extends StatelessWidget {
   final IconData? icon;
   final bool isFullWidth;
   final bool isLoading;
+  final Color? backgroundColor;
 
   const GlassyButton({
     super.key,
@@ -18,6 +19,7 @@ class GlassyButton extends StatelessWidget {
     this.icon,
     this.isFullWidth = true,
     this.isLoading = false,
+    this.backgroundColor,
   });
 
   @override
@@ -30,7 +32,7 @@ class GlassyButton extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: backgroundColor ?? Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(
                 color: Colors.white.withOpacity(0.3),
@@ -50,7 +52,7 @@ class GlassyButton extends StatelessWidget {
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
-                              color: Colors.white,
+                              color: Colors.black,
                               strokeWidth: 2,
                             ),
                           ),
@@ -60,13 +62,13 @@ class GlassyButton extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (icon != null) ...[
-                              Icon(icon, color: Colors.white, size: 20),
+                              Icon(icon, color: Colors.black, size: 20),
                               const SizedBox(width: 8),
                             ],
                             Text(
                               text,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: Colors.black,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),

@@ -3,7 +3,8 @@ import 'package:newsapp/core/constants/app_constants.dart';
 import 'package:newsapp/shared/widgets/image_relative_background.dart';
 import 'package:newsapp/shared/widgets/building_overlay.dart';
 import 'package:newsapp/core/constants/hof_overlay_coordinates.dart';
-import 'package:newsapp/features/marketplace/presentation/widgets/interactive_overlay_area.dart';
+import 'package:newsapp/app/routes.dart';
+import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 
 /// Hall of Fame Detail Screen
 ///
@@ -27,17 +28,22 @@ class _RightTopZoneDetailScreenState extends State<RightTopZoneDetailScreen> {
       final icon = HallOfFameOverlays.getIcon(label);
 
       return overlay.copyWith(
-        customWidget: InteractiveOverlayArea(
-          overlay: overlay,
-          isCircular: isCircular,
-          color: color,
-          icon: icon,
+        customWidget: GestureDetector(
           onTap: () {
             // Handle tap for each overlay
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$label tapped!')),
-            );
+            if (label == 'HOF Friends') {
+              Navigator.pushNamed(context, AppRoutes.hofFriends);
+            } else if (label == 'Personal HOF') {
+              Navigator.pushNamed(context, AppRoutes.personalHof);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('$label tapped!')),
+              );
+            }
           },
+          child: Container(
+            color: Colors.transparent,
+          ),
         ),
       );
     }).toList();
@@ -46,11 +52,21 @@ class _RightTopZoneDetailScreenState extends State<RightTopZoneDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ImageRelativeBackground(
-        imagePath: 'assets/images/hof_hallway.png',
-        opacity: AppConstants.dashboardBackgroundOpacity,
-        overlays: _buildOverlays(),
-        child: Container(),
+      body: Stack(
+        children: [
+          ImageRelativeBackground(
+            imagePath: 'assets/images/hof_hallway.png',
+            opacity: AppConstants.dashboardBackgroundOpacity,
+            overlays: _buildOverlays(),
+            child: Container(),
+          ),
+          // Back button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 10,
+            child: const GlassyBackButton(),
+          ),
+        ],
       ),
     );
   }

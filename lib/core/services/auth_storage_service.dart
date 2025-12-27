@@ -8,6 +8,9 @@ class AuthStorageService {
   static const String _keyToken = 'auth_token';
   static const String _keyUserData = 'user_data';
   static const String _keyRememberMe = 'remember_me';
+  static const String _keyHasLoggedInBefore = 'has_logged_in_before';
+  static const String _keySelectedTeam = 'selected_team';
+  static const String _keyFcmToken = 'fcm_token';
 
   /// Save authentication token
   static Future<void> saveToken(String token) async {
@@ -61,6 +64,7 @@ class AuthStorageService {
     await prefs.remove(_keyToken);
     await prefs.remove(_keyUserData);
     await prefs.remove(_keyRememberMe);
+    await prefs.remove(_keyFcmToken);
   }
 
   /// Save complete auth response (token + user data)
@@ -72,5 +76,47 @@ class AuthStorageService {
     await saveToken(token);
     await saveUserData(userData);
     await saveRememberMe(rememberMe);
+  }
+
+  /// Check if user has logged in before
+  static Future<bool> hasLoggedInBefore() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyHasLoggedInBefore) ?? false;
+  }
+
+  /// Mark that user has logged in
+  static Future<void> markLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyHasLoggedInBefore, true);
+  }
+
+  /// Save selected team
+  static Future<void> saveSelectedTeam(String team) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keySelectedTeam, team);
+  }
+
+  /// Get selected team
+  static Future<String?> getSelectedTeam() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keySelectedTeam);
+  }
+
+  /// Save FCM token
+  static Future<void> saveFcmToken(String fcmToken) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyFcmToken, fcmToken);
+  }
+
+  /// Get FCM token
+  static Future<String?> getFcmToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyFcmToken);
+  }
+
+  /// Remove FCM token
+  static Future<void> removeFcmToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyFcmToken);
   }
 }

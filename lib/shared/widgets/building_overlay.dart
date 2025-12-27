@@ -46,7 +46,7 @@ class BuildingOverlay {
     this.borderColor,
     this.borderWidth = 2.0,
   }) : assert(left >= 0.0 && left <= 1.0),
-       assert(top >= 0.0 && top <= 1.0),
+       assert(top >= 0.0),
        assert(width > 0.0 && width <= 1.0),
        assert(height > 0.0 && height <= 1.0);
 

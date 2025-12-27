@@ -20,45 +20,21 @@ class BackgroundWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Background Image
-        Positioned.fill(
-          child: Opacity(
-            opacity: opacity,
-            child: Image.asset(
-              AppAssets.backgroundImage,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-              alignment: Alignment.center,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback to gradient if image not found
-                return Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.blue.shade400,
-                        Colors.blue.shade800,
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white, // White background
+        image: DecorationImage(
+          image: AssetImage(AppAssets.backgroundImage),
+          fit: BoxFit.cover,
+          opacity: opacity,
+          onError: (exception, stackTrace) {
+            // Silently fail - white background will show
+          },
         ),
-
-        // Content
-        SafeArea(
-          child: child,
-        ),
-      ],
+      ),
+      child: SafeArea(
+        child: child,
+      ),
     );
   }
 }

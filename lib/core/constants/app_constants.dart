@@ -5,7 +5,7 @@ class AppConstants {
   AppConstants._(); // Private constructor to prevent instantiation
 
   // ==================== App Info ====================
-  static const String appName = 'NewsApp';
+  static const String appName = 'Side Line';
   static const String appVersion = '1.0.0';
 
   // ==================== UI Constants ====================

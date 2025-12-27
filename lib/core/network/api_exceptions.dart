@@ -32,5 +32,18 @@ class ValidationException extends ApiException {
 
 /// Unauthorized Exception (401 errors)
 class UnauthorizedException extends ApiException {
-  UnauthorizedException() : super('Unauthorized. Please login again.', 401);
+  UnauthorizedException([String? message])
+      : super(message ?? 'Unauthorized. Please login again.', 401);
+}
+
+/// Forbidden Exception (403 errors)
+class ForbiddenException extends ApiException {
+  ForbiddenException([String? message])
+      : super(message ?? 'Access forbidden.', 403);
+}
+
+/// Not Found Exception (404 errors)
+class NotFoundException extends ApiException {
+  NotFoundException([String? message])
+      : super(message ?? 'Resource not found.', 404);
 }

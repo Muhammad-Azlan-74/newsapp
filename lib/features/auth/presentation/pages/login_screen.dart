@@ -9,6 +9,8 @@ import 'package:newsapp/features/auth/data/repositories/auth_repository.dart';
 import 'package:newsapp/features/auth/data/models/login_request.dart';
 import 'package:newsapp/core/network/api_client.dart';
 import 'package:newsapp/core/services/auth_storage_service.dart';
+import 'package:newsapp/features/user/data/repositories/user_preferences_repository.dart';
+import 'package:newsapp/core/services/team_image_cache_service.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -24,7 +26,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _authRepository = AuthRepository(ApiClient());
+  final _apiClient = ApiClient();
+  late final _authRepository = AuthRepository(_apiClient);
+  late final _preferencesRepository = UserPreferencesRepository(_apiClient);
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -53,13 +57,51 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
 
-        // Only save token and user data if remember me is checked
+        // Always save user data for the session
+        // Save token only if remember me is checked
+        final userData = response.user ?? {'email': _emailController.text};
+        await AuthStorageService.saveUserData(userData);
+
+        // If the API returns selectedTeam, save it separately
+        if (userData['selectedTeam'] != null) {
+          await AuthStorageService.saveSelectedTeam(userData['selectedTeam'] as String);
+        }
+
         if (_rememberMe) {
-          await AuthStorageService.saveAuthResponse(
-            token: response.accessToken,
-            userData: response.user ?? {'email': _emailController.text},
-            rememberMe: true,
-          );
+          await AuthStorageService.saveToken(response.accessToken);
+          await AuthStorageService.saveRememberMe(true);
+        } else {
+          // For current session only, save token temporarily
+          await AuthStorageService.saveToken(response.accessToken);
+        }
+
+        // Fetch favorite teams and cache team images
+        try {
+          var favoriteTeamsResponse = await _preferencesRepository.getFavoriteTeams();
+
+          // If favoriteTeams is empty but we have a selectedTeam saved, sync it
+          if (favoriteTeamsResponse.favoriteTeams.isEmpty) {
+            final selectedTeamId = await AuthStorageService.getSelectedTeam();
+            if (selectedTeamId != null && selectedTeamId.isNotEmpty) {
+              // Update backend with the selected team
+              await _preferencesRepository.updateFavoriteTeams([selectedTeamId]);
+
+              // Fetch again to get full team details with images
+              favoriteTeamsResponse = await _preferencesRepository.getFavoriteTeams();
+            }
+          }
+
+          // Cache images for the first favorite team (working with one team for now)
+          if (favoriteTeamsResponse.favoriteTeams.isNotEmpty) {
+            final team = favoriteTeamsResponse.favoriteTeams.first;
+            await TeamImageCacheService.cacheTeamImages(team);
+
+            // Update selectedTeam with the team ID from favorite teams
+            await AuthStorageService.saveSelectedTeam(team.id);
+          }
+        } catch (e) {
+          // Continue even if favorite teams fetch fails
+          // User can still access the app
         }
 
         if (mounted) {

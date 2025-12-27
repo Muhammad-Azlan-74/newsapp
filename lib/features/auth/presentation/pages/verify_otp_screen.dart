@@ -10,6 +10,8 @@ import 'package:newsapp/features/auth/data/repositories/auth_repository.dart';
 import 'package:newsapp/core/network/api_client.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/marketplace_screen.dart';
 import 'package:newsapp/core/services/auth_storage_service.dart';
+import 'package:newsapp/features/user/data/repositories/user_preferences_repository.dart';
+import 'package:newsapp/core/services/team_image_cache_service.dart';
 
 /// Verify OTP Screen
 ///
@@ -37,7 +39,9 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     6,
     (index) => FocusNode(),
   );
-  final _authRepository = AuthRepository(ApiClient());
+  final _apiClient = ApiClient();
+  late final _authRepository = AuthRepository(_apiClient);
+  late final _preferencesRepository = UserPreferencesRepository(_apiClient);
   bool _isLoading = false;
   bool _isResending = false;
 
@@ -66,6 +70,35 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       if (widget.isFromSignup) {
         // Verify email OTP for signup
         await _authRepository.verifyEmailOtp(widget.email, otp);
+
+        // Fetch favorite teams and cache team images after verification
+        try {
+          var favoriteTeamsResponse = await _preferencesRepository.getFavoriteTeams();
+
+          // If favoriteTeams is empty but we have a selectedTeam saved, sync it
+          if (favoriteTeamsResponse.favoriteTeams.isEmpty) {
+            final selectedTeamId = await AuthStorageService.getSelectedTeam();
+            if (selectedTeamId != null && selectedTeamId.isNotEmpty) {
+              // Update backend with the selected team
+              await _preferencesRepository.updateFavoriteTeams([selectedTeamId]);
+
+              // Fetch again to get full team details with images
+              favoriteTeamsResponse = await _preferencesRepository.getFavoriteTeams();
+            }
+          }
+
+          // Cache images for the first favorite team (working with one team for now)
+          if (favoriteTeamsResponse.favoriteTeams.isNotEmpty) {
+            final team = favoriteTeamsResponse.favoriteTeams.first;
+            await TeamImageCacheService.cacheTeamImages(team);
+
+            // Update selectedTeam with the team ID from favorite teams
+            await AuthStorageService.saveSelectedTeam(team.id);
+          }
+        } catch (e) {
+          // Continue even if favorite teams fetch fails
+          // User can still access the app
+        }
 
         if (mounted) {
           setState(() => _isLoading = false);

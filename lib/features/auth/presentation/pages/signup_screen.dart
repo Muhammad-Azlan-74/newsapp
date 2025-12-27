@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:newsapp/core/constants/app_constants.dart';
 import 'package:newsapp/app/theme/app_colors.dart';
 import 'package:newsapp/shared/widgets/background_widget.dart';
@@ -29,6 +30,22 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
   bool _agreeToTerms = false;
+  String _completePhoneNumber = '';
+  bool _isPhoneValid = false;
+
+  // Track form validity
+  bool _isFormValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listeners to all text fields to check form validity
+    _nameController.addListener(_checkFormValidity);
+    _emailController.addListener(_checkFormValidity);
+    _phoneController.addListener(_checkFormValidity);
+    _passwordController.addListener(_checkFormValidity);
+    _confirmPasswordController.addListener(_checkFormValidity);
+  }
 
   @override
   void dispose() {
@@ -38,6 +55,22 @@ class _SignupScreenState extends State<SignupScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  /// Check if form is valid
+  void _checkFormValidity() {
+    final isValid = _nameController.text.length >= 3 &&
+        _emailController.text.contains('@') &&
+        _isPhoneValid &&
+        _passwordController.text.length >= 8 &&
+        _confirmPasswordController.text == _passwordController.text &&
+        _agreeToTerms;
+
+    if (isValid != _isFormValid) {
+      setState(() {
+        _isFormValid = isValid;
+      });
+    }
   }
 
   /// Handle signup action
@@ -67,7 +100,7 @@ class _SignupScreenState extends State<SignupScreen> {
               signupData: SignupData(
                 name: _nameController.text,
                 email: _emailController.text,
-                phoneNumber: _phoneController.text,
+                phoneNumber: _completePhoneNumber,
                 password: _passwordController.text,
               ),
             ),
@@ -185,21 +218,28 @@ class _SignupScreenState extends State<SignupScreen> {
 
                           const SizedBox(height: 20),
 
-                          // Phone Number Field
-                          TextFormField(
+                          // Phone Number Field with Country Code
+                          IntlPhoneField(
                             controller: _phoneController,
-                            keyboardType: TextInputType.phone,
                             decoration: const InputDecoration(
                               labelText: 'Phone Number',
                               hintText: 'Enter your phone number',
-                              prefixIcon: Icon(Icons.phone_outlined),
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(),
+                              ),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
+                            initialCountryCode: 'US',
+                            onChanged: (phone) {
+                              _completePhoneNumber = phone.completeNumber;
+                              _isPhoneValid = phone.isValidNumber();
+                              _checkFormValidity();
+                            },
+                            validator: (phone) {
+                              if (phone == null || phone.number.isEmpty) {
                                 return 'Please enter your phone number';
                               }
-                              if (value.length < 10) {
-                                return 'Phone number must be at least 10 digits';
+                              if (!phone.isValidNumber()) {
+                                return 'Please enter a valid phone number';
                               }
                               return null;
                             },
@@ -284,6 +324,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 onChanged: (value) {
                                   setState(() {
                                     _agreeToTerms = value ?? false;
+                                    _checkFormValidity();
                                   });
                                 },
                                 fillColor: WidgetStateProperty.all(AppColors.white),
@@ -294,6 +335,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                   onTap: () {
                                     setState(() {
                                       _agreeToTerms = !_agreeToTerms;
+                                      _checkFormValidity();
                                     });
                                   },
                                   child: Text(
@@ -309,11 +351,18 @@ class _SignupScreenState extends State<SignupScreen> {
 
                           const SizedBox(height: 30),
 
-                          // Signup Button
-                          GlassyButton(
-                            onPressed: _handleSignup,
-                            text: 'Sign Up',
-                            isLoading: _isLoading,
+                          // Signup Button - Lightens up when form is valid
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            child: GlassyButton(
+                              onPressed: _handleSignup,
+                              text: 'Sign Up',
+                              isLoading: _isLoading,
+                              // Enhanced opacity when form is valid
+                              backgroundColor: _isFormValid
+                                  ? AppColors.white.withOpacity(0.35)
+                                  : AppColors.white.withOpacity(0.2),
+                            ),
                           ),
 
                           const SizedBox(height: 20),

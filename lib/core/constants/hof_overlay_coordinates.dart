@@ -60,7 +60,7 @@ class HallOfFameOverlays {
   static List<BuildingOverlay> get all => [
         leftMiddle,
         center,
-        rightMiddle,
+        // rightMiddle removed - Personal Profile overlay removed
       ];
 
   /// Check if an overlay should be circular

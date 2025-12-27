@@ -56,12 +56,12 @@ class _ImageRelativeBackgroundState extends State<ImageRelativeBackground> {
   }
 
   Future<void> _loadImage() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
     try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
       final data = await DefaultAssetBundle.of(context).load(widget.imagePath);
       final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
       final frame = await codec.getNextFrame();
@@ -133,6 +133,18 @@ class _ImageRelativeBackgroundState extends State<ImageRelativeBackground> {
                   fit: BoxFit.fill, // We already calculated the size
                   width: renderedWidth,
                   height: renderedHeight,
+                  gaplessPlayback: true,
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (wasSynchronouslyLoaded) {
+                      return child;
+                    }
+                    return AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(milliseconds: 100),
+                      curve: Curves.easeOut,
+                      child: child,
+                    );
+                  },
                 ),
               ),
             ),
@@ -203,16 +215,7 @@ class _ImageRelativeBackgroundState extends State<ImageRelativeBackground> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.shade400,
-            Colors.blue.shade800,
-          ],
-        ),
-      ),
+      color: Colors.white, // White background
       child: widget.child ?? const SizedBox.shrink(),
     );
   }
