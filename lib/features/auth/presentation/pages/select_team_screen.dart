@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:newsapp/core/constants/app_constants.dart';
-import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/app/theme/app_colors.dart';
 import 'package:newsapp/shared/widgets/background_widget.dart';
 import 'package:newsapp/shared/widgets/custom_snackbar.dart';
@@ -33,30 +31,10 @@ class _SelectTeamScreenState extends State<SelectTeamScreen> {
   bool _isLoading = false;
 
   final List<Map<String, dynamic>> _teams = [
-    {
-      'id': '6947a3a8d9ba1ed105c021c1',
-      'name': 'Kansas City',
-      'fullName': 'Kansas City Chiefs',
-      'logo': AppAssets.chiefsLogo,
-    },
-    {
-      'id': '6947a3a8d9ba1ed105c021c2',
-      'name': 'Denver',
-      'fullName': 'Denver Broncos',
-      'logo': AppAssets.broncosLogo,
-    },
-    {
-      'id': '6947a3a8d9ba1ed105c021c3',
-      'name': 'Las Vegas',
-      'fullName': 'Las Vegas Raiders',
-      'logo': AppAssets.raidersLogo,
-    },
-    {
-      'id': '6947a3a8d9ba1ed105c021c4',
-      'name': 'Los Angeles',
-      'fullName': 'Los Angeles Chargers',
-      'logo': AppAssets.chargersLogo,
-    },
+    {'name': 'Team A', 'color': Colors.red, 'icon': Icons.group},
+    {'name': 'Team B', 'color': Colors.blue, 'icon': Icons.group},
+    {'name': 'Team C', 'color': Colors.green, 'icon': Icons.group},
+    {'name': 'Team D', 'color': Colors.orange, 'icon': Icons.group},
   ];
 
   Future<void> _handleNext() async {
@@ -83,16 +61,8 @@ class _SelectTeamScreenState extends State<SelectTeamScreen> {
         ),
       );
 
-      // Save access token and user data (including selectedTeam)
+      // Save access token
       await AuthStorageService.saveToken(authResponse.accessToken);
-
-      // Save user data with selectedTeam
-      final userData = authResponse.user ?? {};
-      userData['selectedTeam'] = _selectedTeam;
-      await AuthStorageService.saveUserData(userData);
-
-      // Also save selected team separately for easy access
-      await AuthStorageService.saveSelectedTeam(_selectedTeam!);
 
       if (mounted) {
         setState(() => _isLoading = false);
@@ -125,43 +95,40 @@ class _SelectTeamScreenState extends State<SelectTeamScreen> {
     return Scaffold(
       body: BackgroundWidget(
         opacity: AppConstants.authBackgroundOpacity,
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Back Button
-              Align(
+        child: Column(
+          children: [
+            // Back Button
+            SafeArea(
+              child: Align(
                 alignment: Alignment.topLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: AppColors.black),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
+            ),
 
-              // Scrollable Content
-              Expanded(
+            // Scrollable Content
+            Expanded(
+              child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.defaultPadding * 2,
-                    vertical: AppConstants.defaultPadding,
-                  ),
+                  padding: const EdgeInsets.all(AppConstants.defaultPadding * 2),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Icon
-                      Center(
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: AppColors.black.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.groups,
-                            size: 50,
-                            color: AppColors.black,
-                          ),
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: AppColors.black.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.groups,
+                          size: 50,
+                          color: AppColors.black,
                         ),
                       ),
 
@@ -212,93 +179,79 @@ class _SelectTeamScreenState extends State<SelectTeamScreen> {
                           crossAxisCount: 2,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
-                          childAspectRatio: 1.0,
+                          childAspectRatio: 1.2,
                         ),
                         itemCount: _teams.length,
                         itemBuilder: (context, index) {
                           final team = _teams[index];
-                          final isSelected = _selectedTeam == team['id'];
+                          final isSelected = _selectedTeam == team['name'];
 
                           return GestureDetector(
                             onTap: () {
                               setState(() {
-                                _selectedTeam = team['id'];
+                                _selectedTeam = team['name'];
                               });
                             },
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? AppColors.primary
-                                          : Colors.white.withOpacity(0.3),
-                                      width: isSelected ? 3 : 1.5,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.white.withOpacity(0.95),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? team['color']
+                                      : Colors.transparent,
+                                  width: 3,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Team Icon
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: team['color'].withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      team['icon'],
+                                      size: 32,
+                                      color: team['color'],
                                     ),
                                   ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      // Team Logo
-                                      Container(
-                                        width: 80,
-                                        height: 80,
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.1),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: ClipOval(
-                                          child: Image.asset(
-                                            team['logo'],
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
 
-                                      const SizedBox(height: 12),
+                                  const SizedBox(height: 12),
 
-                                      // City Name
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                                        child: Text(
-                                          team['name'],
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: isSelected
-                                                ? AppColors.primary
-                                                : AppColors.black,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 8),
-
-                                      // Selected Indicator
-                                      if (isSelected)
-                                        const Icon(
-                                          Icons.check_circle,
-                                          color: AppColors.primary,
-                                          size: 24,
-                                        ),
-                                    ],
+                                  // Team Name
+                                  Text(
+                                    team['name'],
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected
+                                          ? team['color']
+                                          : AppColors.textPrimary,
+                                    ),
                                   ),
-                                ),
+
+                                  const SizedBox(height: 4),
+
+                                  // Selected Indicator
+                                  if (isSelected)
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: team['color'],
+                                      size: 20,
+                                    ),
+                                ],
                               ),
                             ),
                           );
@@ -332,15 +285,12 @@ class _SelectTeamScreenState extends State<SelectTeamScreen> {
                                 ),
                         ),
                       ),
-
-                      // Bottom padding to prevent overflow
-                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
