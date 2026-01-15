@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter clean:*)",
+      "Bash(cat:*)",
+      "WebFetch(domain:sportsapp-server.vercel.app)",
+      "Bash(flutter pub get:*)",
+      "Bash(test:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter run:*)"
+    ]
+  }
+}

@@ -1,0 +1,247 @@
+import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:http_parser/http_parser.dart' as http_parser;
+import 'package:newsapp/core/network/api_client.dart';
+import 'package:newsapp/core/network/api_endpoints.dart';
+import 'package:newsapp/core/network/api_exceptions.dart';
+import 'package:newsapp/core/services/auth_storage_service.dart';
+import 'package:newsapp/features/user/data/models/hof_user_model.dart';
+import 'package:newsapp/features/user/data/models/hall_of_fame_model.dart';
+
+/// Hall of Fame Repository
+///
+/// Handles all Hall of Fame related API calls
+class HofRepository {
+  final ApiClient _apiClient;
+
+  HofRepository(this._apiClient);
+
+  /// Get all Hall of Fame users
+  ///
+  /// Requires authentication and email verification
+  Future<HofUsersResponse> getHofUsers() async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.hofUsers,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      return HofUsersResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Get Hall of Fame details for a specific user
+  ///
+  /// Requires authentication and email verification
+  Future<HallOfFameResponse> getHofDetails(String userId) async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.hofDetails(userId),
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      return HallOfFameResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Like a Hall of Fame entry
+  ///
+  /// Requires authentication and email verification
+  /// [hofUserId] - The user ID whose HOF entry to like
+  Future<LikeResponse> likeHofEntry(String hofUserId) async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.hofLike,
+        data: {'hofUserId': hofUserId},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      return LikeResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Unlike a Hall of Fame entry
+  ///
+  /// Requires authentication and email verification
+  /// [hofUserId] - The user ID whose HOF entry to unlike
+  Future<LikeResponse> unlikeHofEntry(String hofUserId) async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.hofUnlike,
+        data: {'hofUserId': hofUserId},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      return LikeResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Upload a picture to Hall of Fame using http package
+  ///
+  /// Requires authentication and email verification
+  /// [filePath] - Path to the image file to upload
+  Future<UploadPictureResponse> uploadPicture(String filePath) async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      // Get file name from path
+      String fileName = filePath.split('/').last;
+      if (fileName.isEmpty) {
+        fileName = filePath.split('\\').last; // Handle Windows paths
+      }
+
+      print('Uploading file: $fileName from path: $filePath');
+
+      // Create multipart request using http package
+      final uri = Uri.parse('${ApiEndpoints.baseUrl}${ApiEndpoints.hofUploadPicture}');
+      final request = http.MultipartRequest('POST', uri);
+
+      // Add authorization header
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Add the image file
+      final multipartFile = await http.MultipartFile.fromPath(
+        'image',
+        filePath,
+        filename: fileName,
+      );
+      request.files.add(multipartFile);
+
+      print('Request URI: $uri');
+      print('Request headers: ${request.headers}');
+      print('File field name: image');
+      print('File name: $fileName');
+
+      // Send the request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
+        return UploadPictureResponse.fromJson(jsonResponse);
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (response.statusCode == 403) {
+        throw ApiException('Email verification required', response.statusCode);
+      } else if (response.statusCode == 400) {
+        final errorBody = json.decode(response.body);
+        final message = errorBody['message'] ?? 'Bad request';
+        throw ApiException(message, response.statusCode);
+      } else {
+        final errorBody = json.decode(response.body);
+        final message = errorBody['message'] ?? 'Server error';
+        throw ServerException(message, response.statusCode);
+      }
+    } catch (e) {
+      if (e is ApiException || e is UnauthorizedException || e is ServerException) {
+        rethrow;
+      }
+      throw ApiException('Upload failed: ${e.toString()}', null);
+    }
+  }
+
+  /// Handle Dio errors and convert to custom exceptions
+  void _handleDioError(DioException e) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      throw NetworkException();
+    }
+
+    if (e.type == DioExceptionType.connectionError) {
+      throw NetworkException();
+    }
+
+    // Extract error message from response
+    String errorMessage = 'An error occurred';
+    int? statusCode;
+
+    if (e.response != null) {
+      statusCode = e.response!.statusCode;
+
+      // Try to extract message from response
+      if (e.response!.data != null) {
+        if (e.response!.data is Map<String, dynamic>) {
+          final data = e.response!.data as Map<String, dynamic>;
+          errorMessage = data['message'] as String? ??
+              data['error'] as String? ??
+              errorMessage;
+        } else if (e.response!.data is String) {
+          errorMessage = e.response!.data as String;
+        }
+      }
+
+      // Handle specific status codes
+      if (statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (statusCode == 403) {
+        throw ApiException('Email verification required', statusCode);
+      } else if (statusCode == 404) {
+        throw ApiException('HOF users not found', statusCode);
+      } else if (statusCode == 400) {
+        // Handle 400 errors (no file uploaded, only images allowed, etc.)
+        throw ApiException(errorMessage, statusCode);
+      } else if (statusCode != null && statusCode >= 500) {
+        throw ServerException(errorMessage, statusCode);
+      }
+    }
+
+    throw ApiException(errorMessage, statusCode);
+  }
+}
