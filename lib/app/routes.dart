@@ -20,7 +20,6 @@ import 'package:newsapp/features/marketplace/presentation/pages/man_cave_screen.
 import 'package:newsapp/features/marketplace/presentation/pages/news_stand_screen.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/hof_friends_screen.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/personal_hof_screen.dart';
-import 'package:newsapp/features/notifications/presentation/pages/notifications_screen.dart';
 
 /// App Routes
 ///
@@ -121,7 +120,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const PersonalHofScreen());
 
       case notifications:
-        return MaterialPageRoute(builder: (_) => const NotificationsScreen());
+        return MaterialPageRoute(builder: (_) => const NewsStandScreen());
 
       default:
         return MaterialPageRoute(

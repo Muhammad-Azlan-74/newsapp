@@ -11,6 +11,8 @@ import 'package:newsapp/app/theme/app_colors.dart';
 import 'package:newsapp/core/constants/marketplace_overlay_coordinates.dart';
 import 'package:newsapp/features/marketplace/presentation/widgets/interactive_overlay_area.dart';
 import 'package:newsapp/app/routes.dart';
+import 'package:newsapp/core/services/socket_service.dart';
+import 'package:newsapp/features/user/data/models/notification_model.dart';
 
 /// Marketplace/Dashboard Screen
 ///
@@ -23,6 +25,99 @@ class MarketplaceScreen extends StatefulWidget {
 }
 
 class _MarketplaceScreenState extends State<MarketplaceScreen> {
+  final SocketService _socketService = SocketService();
+  int _unreadNotifications = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeSocketConnection();
+  }
+
+  @override
+  void dispose() {
+    // Keep socket alive for the session
+    super.dispose();
+  }
+
+  /// Initialize Socket.IO connection for real-time notifications
+  Future<void> _initializeSocketConnection() async {
+    try {
+      final accessToken = await AuthStorageService.getToken();
+      if (accessToken != null) {
+        // Connect to Socket.IO
+        await _socketService.connect(accessToken);
+
+        // Listen for notifications
+        _socketService.notificationStream.listen((notification) {
+          _handleIncomingNotification(notification);
+        });
+
+        // Listen for connection status
+        _socketService.connectionStatusStream.listen((isConnected) {
+          debugPrint('Socket connection status: $isConnected');
+        });
+
+        // Listen for errors
+        _socketService.errorStream.listen((error) {
+          debugPrint('Socket error: $error');
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to initialize socket connection: $e');
+    }
+  }
+
+  /// Handle incoming real-time notification
+  void _handleIncomingNotification(NotificationModel notification) {
+    setState(() {
+      _unreadNotifications++;
+    });
+
+    // Show in-app notification
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.notifications, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      notification.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      notification.body,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.blue.shade700,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'View',
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.newsStand);
+            },
+          ),
+        ),
+      );
+    }
+  }
+
   /// Build the list of interactive overlays
   List<BuildingOverlay> _buildOverlays() {
     final overlays = MarketplaceOverlays.all;
@@ -116,11 +211,85 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ImageRelativeBackground(
-        imagePath: AppAssets.backgroundImage,
-        opacity: AppConstants.dashboardBackgroundOpacity,
-        overlays: _buildOverlays(),
-        child: Container(),
+      body: Stack(
+        children: [
+          // Background with overlays
+          ImageRelativeBackground(
+            imagePath: AppAssets.backgroundImage,
+            opacity: AppConstants.dashboardBackgroundOpacity,
+            overlays: _buildOverlays(),
+            child: Container(),
+          ),
+          // Notification bell icon (top-right)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            right: 16,
+            child: GestureDetector(
+              onTap: () async {
+                setState(() {
+                  _unreadNotifications = 0;
+                });
+                await Navigator.pushNamed(context, AppRoutes.newsStand);
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.notifications,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Unread badge
+                  if (_unreadNotifications > 0)
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 20,
+                          minHeight: 20,
+                        ),
+                        child: Text(
+                          _unreadNotifications > 99
+                              ? '99+'
+                              : _unreadNotifications.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: ClipRRect(
         borderRadius: BorderRadius.circular(30),
