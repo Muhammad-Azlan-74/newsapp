@@ -49,19 +49,33 @@ class HallOfFameModel {
 
 /// HOF Image Model
 class HofImage {
+  final String id;
   final String url;
+  final String? caption;
+  final String? createdAt;
 
-  HofImage({required this.url});
+  HofImage({
+    required this.id,
+    required this.url,
+    this.caption,
+    this.createdAt,
+  });
 
   factory HofImage.fromJson(Map<String, dynamic> json) {
     return HofImage(
+      id: json['_id'] ?? '',
       url: json['url'] ?? '',
+      caption: json['caption'],
+      createdAt: json['createdAt'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      '_id': id,
       'url': url,
+      'caption': caption,
+      'createdAt': createdAt,
     };
   }
 }

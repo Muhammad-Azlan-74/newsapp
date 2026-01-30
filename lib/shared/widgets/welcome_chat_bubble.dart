@@ -90,6 +90,10 @@ class _WelcomeChatBubbleState extends State<WelcomeChatBubble>
             ? 'Welcome to the newsapp'
             : 'Welcome back');
 
+    // Calculate max width: screen width - left position - FAB width - padding
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxBubbleWidth = screenWidth - 140 - 120 - 12; // 140 left offset, 120 FAB area, 12 tail
+
     return Positioned(
       left: 140, // Position to the right of the avatar (avatar at left: 20, width: 110)
       bottom: 65, // Align with avatar center (avatar at bottom: 30, height: 110, so center is at 30 + 55 = 85, minus half bubble height)
@@ -107,30 +111,33 @@ class _WelcomeChatBubbleState extends State<WelcomeChatBubble>
                 painter: _ChatBubbleTailPainter(),
               ),
               // Glossy chat bubble
-              ClipRRect(
-                borderRadius: BorderRadius.circular(30),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1.5,
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxBubbleWidth > 100 ? maxBubbleWidth : 100),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
                       ),
-                    ),
-                    child: Text(
-                      message,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                        letterSpacing: 0.5,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Text(
+                        message,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ),

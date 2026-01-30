@@ -10,19 +10,19 @@ class ManCaveOverlays {
 
   /// Overlay 1 - Placeholder coordinates (edit these yourself)
   static BuildingOverlay get overlay1 => const BuildingOverlay(
-        left: 0.15,
-        top: 0.3,
-        width: 0.3,
-        height: 0.2,
+        left: 0.65,
+        top: 0.08,
+        width: 0.2,
+        height: 0.37,
         label: 'Overlay 1',
       );
 
   /// Overlay 2 - Placeholder coordinates (edit these yourself)
   static BuildingOverlay get overlay2 => const BuildingOverlay(
-        left: 0.55,
-        top: 0.4,
-        width: 0.3,
-        height: 0.2,
+        left: 0.47,
+        top: 0.5,
+        width: 0.38,
+        height: 0.13,
         label: 'Overlay 2',
       );
 

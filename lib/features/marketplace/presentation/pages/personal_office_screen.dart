@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/constants/personal_office_overlay_coordinates.dart';
-import 'package:newsapp/features/marketplace/presentation/widgets/interactive_overlay_area.dart';
 import 'package:newsapp/shared/widgets/settings_tv_dialog.dart';
 import 'package:newsapp/shared/widgets/personalization_dialog.dart';
 import 'package:newsapp/shared/widgets/support_dialog.dart';
@@ -9,6 +9,7 @@ import 'package:newsapp/shared/widgets/customization_dialog.dart';
 import 'package:newsapp/shared/widgets/status_dialog.dart';
 import 'package:newsapp/shared/widgets/fantasy_dialog.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
+import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 
 /// Personal Office Screen
 ///
@@ -21,15 +22,101 @@ class PersonalOfficeScreen extends StatefulWidget {
 }
 
 class _PersonalOfficeScreenState extends State<PersonalOfficeScreen> {
+  bool _showHelpLabels = false;
+
+  /// Toggle help labels visibility for 5 seconds
+  void _toggleHelpLabels() {
+    if (_showHelpLabels) return; // Already showing
+
+    setState(() {
+      _showHelpLabels = true;
+    });
+
+    // Hide after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showHelpLabels = false;
+        });
+      }
+    });
+  }
+
+  /// Build a help label widget
+  Widget _buildHelpLabel(String text) {
+    return AnimatedOpacity(
+      opacity: _showHelpLabels ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 300),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.7),
+                    offset: const Offset(1, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Get display name for area label
+  String _getAreaDisplayName(String? label) {
+    switch (label) {
+      case 'Area 1':
+        return 'Settings';
+      case 'Area 2':
+        return 'Fantasy';
+      case 'Area 3':
+        return 'Status';
+      case 'Area 4':
+        return 'Support';
+      case 'Area 5':
+        return 'Personalization';
+      case 'Area 6':
+        return 'Customization';
+      default:
+        return label ?? '';
+    }
+  }
+
   /// Build the list of interactive overlays
   List<Widget> _buildOverlays(BuildContext context, double imageWidth, double imageHeight) {
     final overlays = PersonalOfficeOverlays.all;
 
     return overlays.map((overlay) {
       final label = overlay.label;
-      final isCircular = PersonalOfficeOverlays.isCircular(label);
-      final color = PersonalOfficeOverlays.getColor(label);
-      final icon = PersonalOfficeOverlays.getIcon(label);
 
       // Convert normalized coordinates to actual pixel positions
       final left = overlay.left * imageWidth;
@@ -105,6 +192,25 @@ class _PersonalOfficeScreenState extends State<PersonalOfficeScreen> {
     }).toList();
   }
 
+  /// Build help labels for all overlays
+  List<Widget> _buildHelpLabels(double screenWidth, double screenHeight) {
+    if (!_showHelpLabels) return [];
+
+    final overlays = PersonalOfficeOverlays.all;
+
+    return overlays.map((overlay) {
+      final left = overlay.left * screenWidth + 5;
+      final top = overlay.top * screenHeight + 5;
+      final displayName = _getAreaDisplayName(overlay.label);
+
+      return Positioned(
+        left: left,
+        top: top,
+        child: _buildHelpLabel(displayName),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -143,11 +249,19 @@ class _PersonalOfficeScreenState extends State<PersonalOfficeScreen> {
               ),
               // Overlays positioned on the screen
               ..._buildOverlays(context, screenWidth, screenHeight),
+              // Help labels for all areas
+              ..._buildHelpLabels(screenWidth, screenHeight),
               // Back button
               const Positioned(
                 top: 40,
                 left: 16,
                 child: GlassyBackButton(),
+              ),
+              // Help button
+              Positioned(
+                top: 40,
+                right: 16,
+                child: GlassyHelpButton(onPressed: _toggleHelpLabels),
               ),
             ],
           );

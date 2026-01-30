@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/constants/sportsbook_overlay_coordinates.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
+import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 
 /// Sportsbook Screen
 ///
@@ -150,6 +151,12 @@ class _SportsbookScreenState extends State<SportsbookScreen> {
                 top: MediaQuery.of(context).padding.top + 10,
                 left: 10,
                 child: const GlassyBackButton(),
+              ),
+              // Help button
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 10,
+                right: 10,
+                child: const GlassyHelpButton(),
               ),
             ],
           );

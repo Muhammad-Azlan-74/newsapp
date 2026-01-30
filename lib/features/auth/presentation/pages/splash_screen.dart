@@ -3,6 +3,7 @@ import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/constants/app_constants.dart';
 import 'package:newsapp/shared/widgets/background_widget.dart';
 import 'package:newsapp/core/services/auth_storage_service.dart';
+import 'package:newsapp/core/services/permission_service.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/marketplace_screen.dart';
 import 'login_screen.dart';
 
@@ -44,13 +45,21 @@ class _SplashScreenState extends State<SplashScreen>
 
   /// Check for saved authentication and navigate to appropriate screen
   Future<void> _checkAuthAndNavigate() async {
+    // Request all necessary permissions
+    await PermissionService().requestAllPermissions();
+
     // Wait for splash duration
     await Future.delayed(const Duration(seconds: AppConstants.splashDuration));
 
     if (!mounted) return;
 
-    // Check if user is logged in (token will only exist if Remember Me was checked)
+    // Debug: Check token status
+    final token = await AuthStorageService.getToken();
+    debugPrint('Splash screen - Token check: ${token != null && token.isNotEmpty ? "Token found (${token.length} chars)" : "NO TOKEN FOUND"}');
+
+    // Check if user is logged in
     final isLoggedIn = await AuthStorageService.isLoggedIn();
+    debugPrint('Splash screen - isLoggedIn: $isLoggedIn');
 
     if (isLoggedIn) {
       // Navigate to marketplace if token exists

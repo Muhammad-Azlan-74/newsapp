@@ -144,6 +144,17 @@ class HofRepository {
         fileName = filePath.split('\\').last; // Handle Windows paths
       }
 
+      // Determine content type based on file extension
+      String contentType = 'image/jpeg'; // Default
+      final extension = fileName.split('.').last.toLowerCase();
+      if (extension == 'png') {
+        contentType = 'image/png';
+      } else if (extension == 'gif') {
+        contentType = 'image/gif';
+      } else if (extension == 'webp') {
+        contentType = 'image/webp';
+      }
+
       print('Uploading file: $fileName from path: $filePath');
 
       // Create multipart request using http package
@@ -153,11 +164,12 @@ class HofRepository {
       // Add authorization header
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Add the image file
+      // Add the image file with proper content type
       final multipartFile = await http.MultipartFile.fromPath(
         'image',
         filePath,
         filename: fileName,
+        contentType: http_parser.MediaType.parse(contentType),
       );
       request.files.add(multipartFile);
 
@@ -165,9 +177,15 @@ class HofRepository {
       print('Request headers: ${request.headers}');
       print('File field name: image');
       print('File name: $fileName');
+      print('Content type: $contentType');
 
-      // Send the request
-      final streamedResponse = await request.send();
+      // Send the request with timeout
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 60),
+        onTimeout: () {
+          throw ApiException('Upload timed out. Please try again.', null);
+        },
+      );
       final response = await http.Response.fromStream(streamedResponse);
 
       print('Response status: ${response.statusCode}');
@@ -190,10 +208,44 @@ class HofRepository {
         throw ServerException(message, response.statusCode);
       }
     } catch (e) {
+      print('Upload error: $e');
       if (e is ApiException || e is UnauthorizedException || e is ServerException) {
         rethrow;
       }
       throw ApiException('Upload failed: ${e.toString()}', null);
+    }
+  }
+
+  /// Add or update caption for a Hall of Fame picture
+  ///
+  /// Requires authentication and email verification
+  /// [imageId] - The ObjectId of the image to add caption to
+  /// [caption] - The caption text to add
+  Future<HallOfFameResponse> addCaption(String imageId, String caption) async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.hofCaption,
+        data: {
+          'imageId': imageId,
+          'caption': caption,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      return HallOfFameResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
     }
   }
 

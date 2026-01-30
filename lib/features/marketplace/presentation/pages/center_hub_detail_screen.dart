@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:newsapp/core/constants/training_ground_overlay_coordinates.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
+import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 
 /// Training Ground Detail Screen
 ///
@@ -13,6 +15,74 @@ class CenterHubDetailScreen extends StatefulWidget {
 }
 
 class _CenterHubDetailScreenState extends State<CenterHubDetailScreen> {
+  bool _showHelpLabels = false;
+
+  /// Toggle help labels visibility for 5 seconds
+  void _toggleHelpLabels() {
+    if (_showHelpLabels) return;
+
+    setState(() {
+      _showHelpLabels = true;
+    });
+
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showHelpLabels = false;
+        });
+      }
+    });
+  }
+
+  /// Build a help label widget
+  Widget _buildHelpLabel(String text) {
+    return AnimatedOpacity(
+      opacity: _showHelpLabels ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 300),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.7),
+                    offset: const Offset(1, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Show image dialog
   void _showImageDialog(BuildContext context, String imagePath) {
     showDialog(
@@ -80,9 +150,6 @@ class _CenterHubDetailScreenState extends State<CenterHubDetailScreen> {
 
     return overlays.map((overlay) {
       final label = overlay.label;
-      final isCircular = TrainingGroundOverlays.isCircular(label);
-      final color = TrainingGroundOverlays.getColor(label);
-      final icon = TrainingGroundOverlays.getIcon(label);
 
       // Convert normalized coordinates to actual pixel positions
       final left = overlay.left * imageWidth;
@@ -162,6 +229,33 @@ class _CenterHubDetailScreenState extends State<CenterHubDetailScreen> {
                 left: 10,
                 child: const GlassyBackButton(),
               ),
+              // Help button
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 10,
+                right: 10,
+                child: GlassyHelpButton(onPressed: _toggleHelpLabels),
+              ),
+              // Help label for Area 1 (Bench) - left: 0.001, top: 0.3
+              if (_showHelpLabels)
+                Positioned(
+                  left: 0.001 * screenWidth + 5,
+                  top: 0.3 * screenHeight + 5,
+                  child: _buildHelpLabel('Bench'),
+                ),
+              // Help label for Area 2 (Settings) - left: 0.65, top: 0.38
+              if (_showHelpLabels)
+                Positioned(
+                  left: 0.65 * screenWidth + 5,
+                  top: 0.38 * screenHeight + 5,
+                  child: _buildHelpLabel('Settings'),
+                ),
+              // Help label for Area 3 (Changes) - left: 0.55, top: 0.6
+              if (_showHelpLabels)
+                Positioned(
+                  left: 0.55 * screenWidth + 5,
+                  top: 0.6 * screenHeight + 5,
+                  child: _buildHelpLabel('Changes'),
+                ),
             ],
           );
         },

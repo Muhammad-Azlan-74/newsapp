@@ -1,3 +1,5 @@
+import 'package:newsapp/core/utils/date_formatter.dart';
+
 /// Medical News Model
 ///
 /// Represents medical news (type: "Medical")
@@ -7,7 +9,7 @@ class MedicalNews {
   final String title;
   final String description;
   final String summary;
-  final String publishedDate;
+  final String _publishedDate;
   final String type;
   final Map<String, dynamic> source;
   final String color;
@@ -21,14 +23,17 @@ class MedicalNews {
     required this.title,
     required this.description,
     required this.summary,
-    required this.publishedDate,
+    required String publishedDate,
     required this.type,
     required this.source,
     required this.color,
     required this.league,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : _publishedDate = publishedDate;
+
+  /// Get formatted published date (HH:mm dd,MMM)
+  String get publishedDate => DateFormatter.format(_publishedDate);
 
   factory MedicalNews.fromJson(Map<String, dynamic> json) {
     return MedicalNews(
@@ -54,7 +59,7 @@ class MedicalNews {
       'title': title,
       'description': description,
       'summary': summary,
-      'publishedDate': publishedDate,
+      'publishedDate': _publishedDate,
       'type': type,
       'source': source,
       'color': color,

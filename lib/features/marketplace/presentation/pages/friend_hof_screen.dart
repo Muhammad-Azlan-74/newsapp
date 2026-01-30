@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:newsapp/core/network/api_client.dart';
 import 'package:newsapp/features/user/data/repositories/hof_repository.dart';
 import 'package:newsapp/features/user/data/models/hall_of_fame_model.dart';
@@ -32,6 +33,8 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
   bool _isLiking = false;
   String? _errorMessage;
   String? _currentUserId;
+  int _selectedIndex = 0;
+  final ScrollController _thumbnailScrollController = ScrollController();
 
   @override
   void initState() {
@@ -39,6 +42,12 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
     _hofRepository = HofRepository(ApiClient());
     _loadCurrentUserId();
     _loadHallOfFame();
+  }
+
+  @override
+  void dispose() {
+    _thumbnailScrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCurrentUserId() async {
@@ -67,6 +76,7 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
       setState(() {
         _hallOfFame = response.hallOfFame;
         _isLoading = false;
+        _selectedIndex = 0;
       });
     } catch (e) {
       setState(() {
@@ -134,7 +144,31 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
     }
   }
 
-  Widget _buildImageGallery() {
+  void _onThumbnailTap(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    _scrollToCenter(index);
+  }
+
+  void _scrollToCenter(int index) {
+    if (_hallOfFame == null || _hallOfFame!.images.isEmpty) return;
+    if (!_thumbnailScrollController.hasClients) return;
+
+    const thumbnailWidth = 60.0;
+    const thumbnailSpacing = 8.0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final targetOffset = (index * (thumbnailWidth + thumbnailSpacing)) -
+        (screenWidth / 2) + (thumbnailWidth / 2) + 16;
+
+    _thumbnailScrollController.animateTo(
+      targetOffset.clamp(0, _thumbnailScrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Widget _buildContent() {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.black),
@@ -150,9 +184,9 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Error loading Hall of Fame',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -185,9 +219,9 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
             children: [
               const Icon(Icons.photo_library_outlined, size: 64, color: Colors.black54),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'No pictures yet',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -205,80 +239,137 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
       );
     }
 
-    // Horizontal circular scroll for images with scale effect
-    final pageController = PageController(
-      viewportFraction: 0.85,
-      initialPage: _hallOfFame!.images.length * 1000, // Start in the middle for circular effect
-    );
+    final selectedImage = _hallOfFame!.images[_selectedIndex];
 
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.7,
-      child: PageView.builder(
-        controller: pageController,
-        itemCount: null, // Infinite scroll for circular effect
-        itemBuilder: (context, index) {
-          // Get actual image index using modulo for circular scroll
-          final actualIndex = index % _hallOfFame!.images.length;
-          final image = _hallOfFame!.images[actualIndex];
+    return Column(
+      children: [
+        SizedBox(height: MediaQuery.of(context).padding.top + 60),
 
-          return AnimatedBuilder(
-            animation: pageController,
-            builder: (context, child) {
-              double value = 1.0;
-              double offset = 0.0;
+        // Horizontal thumbnail list at top
+        SizedBox(
+          height: 70,
+          child: ListView.builder(
+            controller: _thumbnailScrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _hallOfFame!.images.length,
+            itemBuilder: (context, index) {
+              final image = _hallOfFame!.images[index];
+              final isSelected = index == _selectedIndex;
 
-              if (pageController.position.haveDimensions) {
-                value = pageController.page! - index;
-                // Scale: items further from center are smaller
-                double scale = (1 - (value.abs() * 0.3)).clamp(0.7, 1.0);
-                // Vertical offset: items further from center move down in an arc
-                offset = (value.abs() * 80); // Adjust this value to control arc height
-
-                return Transform.translate(
-                  offset: Offset(0, offset),
-                  child: Center(
-                    child: SizedBox(
-                      height: Curves.easeInOut.transform(scale) * MediaQuery.of(context).size.height * 0.65,
-                      width: Curves.easeInOut.transform(scale) * MediaQuery.of(context).size.width * 0.8,
-                      child: child,
+              return GestureDetector(
+                onTap: () => _onThumbnailTap(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? Colors.black : Colors.white.withOpacity(0.5),
+                      width: isSelected ? 3 : 1.5,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: CachedNetworkImage(
+                      imageUrl: image.url,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                        child: const Icon(Icons.error, size: 20),
+                      ),
                     ),
                   ),
-                );
-              }
-
-              return Center(
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.65,
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  child: child,
                 ),
               );
             },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: CachedNetworkImage(
-                  imageUrl: image.url,
-                  fit: BoxFit.fill,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey.withOpacity(0.3),
-                    child: const Center(
-                      child: CircularProgressIndicator(color: Colors.black),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey.withOpacity(0.3),
-                    child: const Center(
-                      child: Icon(Icons.error_outline, color: Colors.red, size: 48),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Large centered image with caption
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                // Large image
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: CachedNetworkImage(
+                      imageUrl: selectedImage.url,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Colors.black),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                        child: const Center(
+                          child: Icon(Icons.error_outline, color: Colors.red, size: 48),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+
+                // Caption display (if exists)
+                if (selectedImage.caption != null && selectedImage.caption!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Text(
+                            selectedImage.caption!,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 13,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        ),
+
+        SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
+      ],
     );
   }
 
@@ -298,72 +389,56 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
               ),
             ),
           ),
-          // Image gallery in center
-          Center(
-            child: _buildImageGallery(),
-          ),
+          // Content
+          _buildContent(),
           // Back button
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 8,
             child: const GlassyBackButton(),
           ),
-          // User name at the top center
+          // Likes count (replaced help button)
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  widget.userName,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
+            right: 8,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.favorite,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${_hallOfFame?.likes ?? 0}',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-          // Total likes in top right corner
-          if (_hallOfFame != null)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 12,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.favorite,
-                      color: Colors.red,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${_hallOfFame!.likes}',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          // Like button in bottom right - aligned with back button
+          // Like button in bottom right
           if (_hallOfFame != null && _hallOfFame!.images.isNotEmpty)
             Positioned(
               bottom: MediaQuery.of(context).padding.bottom + 16,

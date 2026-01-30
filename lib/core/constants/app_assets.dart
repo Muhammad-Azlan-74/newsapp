@@ -16,90 +16,81 @@ class AppAssets {
   /// Placeholder for news articles
   static const String newsPlaceholder = 'assets/images/news_placeholder.png';
 
-  // ==================== Screen/Room Images ====================
+  /// Main office building image
+  static const String mainOffice = 'assets/images/main_office.png';
 
-  /// Sportsbook screen background
-  static const String sportsbook = 'assets/images/Sportsbook.png';
-
-  /// Doctor's office screen background
+  /// Doctor's office image
   static const String doctorOffice = 'assets/images/dr_office.png';
 
-  /// Personal office screen background
-  static const String personalOffice = 'assets/images/personal_office.png';
-
-  /// Studio TV screen background
-  static const String studioTv = 'assets/images/studio_tv.png';
-
-  /// Main/HR office screen background
-  static const String mainOffice = 'assets/images/hr_office.png';
+  /// HR office image
   static const String hrOffice = 'assets/images/hr_office.png';
 
-  /// Garage screen background
-  static const String garage = 'assets/images/garage.png';
-
-  /// Janitor office screen background
+  /// Janitor office image
   static const String janitorOffice = 'assets/images/janitor.png';
 
-  /// Conference room screen background
+  /// Studio TV image
+  static const String studioTv = 'assets/images/studio_tv.png';
+
+  /// Personal office image
+  static const String personalOffice = 'assets/images/personal_office.png';
+
+  /// Sportsbook image
+  static const String sportsbook = 'assets/images/Sportsbook.png';
+
+  /// Garage image for rumour garage
+  static const String garage = 'assets/images/garage.png';
+
+  /// Shaddy avatar image
+  static const String shaddy = 'assets/images/shaddy.png';
+
+  /// Conference room image
   static const String conferenceRoom = 'assets/images/conference.png';
 
-  /// Man cave screen background
+  /// Man cave image
   static const String manCave = 'assets/images/mancave.png';
 
-  /// Hall of Fame room background
-  static const String hofRoom = 'assets/images/hof_room.png';
-
-  /// Bench image
-  static const String bench = 'assets/images/bench.png';
-
-  // ==================== Dialog/Overlay Images ====================
-
-  /// Settings dialog overlay
-  static const String settings = 'assets/images/settings.png';
-
-  /// Settings TV dialog overlay
+  /// Settings TV image for personal office
   static const String settingsTv = 'assets/images/settings_tv.png';
 
-  /// Training ground settings overlay
-  static const String settingsTraining = 'assets/images/settings_training.png';
-
-  /// Sportsbook settings overlay
-  static const String sportsbookSettings = 'assets/images/sportsbook_settings.png';
-
-  /// Customization dialog overlay
-  static const String customization = 'assets/images/customization.png';
-
-  /// Personalization dialog overlay
+  /// Personalization image for personal office
   static const String personalization = 'assets/images/personalization.png';
 
-  /// Status dialog overlay
-  static const String status = 'assets/images/status.png';
-
-  /// Support dialog overlay
+  /// Support image for personal office
   static const String support = 'assets/images/support.png';
 
-  /// Changes dialog overlay
-  static const String changes = 'assets/images/changes.png';
+  /// Customization image for personal office
+  static const String customization = 'assets/images/customization.png';
 
-  /// Medlab menu dialog overlay
-  static const String medlabMenu = 'assets/images/medlab_menu.png';
+  /// Status image for personal office
+  static const String status = 'assets/images/status.png';
 
-  /// Fantasy overlay images
+  /// Fantasy images for personal office area 2
   static const String fantasy1 = 'assets/images/fantasy1.png';
   static const String fantasy2 = 'assets/images/fantasy2.png';
   static const String fantasy3 = 'assets/images/fantasy3.png';
 
-  /// Shaddy character image
-  static const String shaddy = 'assets/images/shaddy.png';
+  // ==================== Team Logos ====================
 
-  // ==================== Icons ====================
+  /// Kansas City Chiefs logo
+  static const String chiefsLogo = 'assets/images/chiefs.png';
 
-  /// Custom icons can be added here
-  // static const String iconHome = 'assets/icons/home.png';
-  // static const String iconProfile = 'assets/icons/profile.png';
+  /// Denver Broncos logo
+  static const String broncosLogo = 'assets/images/broncos.png';
 
-  // ==================== Animations ====================
+  /// Las Vegas Raiders logo
+  static const String raidersLogo = 'assets/images/raiders.png';
 
-  /// Lottie animations can be added here
-  // static const String loadingAnimation = 'assets/animations/loading.json';
+  /// Los Angeles Chargers logo
+  static const String chargersLogo = 'assets/images/chargers.png';
+
+// ==================== Icons ====================
+
+/// Custom icons can be added here
+// static const String iconHome = 'assets/icons/home.png';
+// static const String iconProfile = 'assets/icons/profile.png';
+
+// ==================== Animations ====================
+
+/// Lottie animations can be added here
+// static const String loadingAnimation = 'assets/animations/loading.json';
 }

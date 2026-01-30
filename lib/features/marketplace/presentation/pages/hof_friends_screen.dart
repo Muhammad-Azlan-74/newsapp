@@ -50,6 +50,22 @@ class _HofFriendsScreenState extends State<HofFriendsScreen> {
     }
   }
 
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.asset(
+            'assets/images/filter.png',
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,6 +89,36 @@ class _HofFriendsScreenState extends State<HofFriendsScreen> {
             top: MediaQuery.of(context).padding.top + 12,
             left: 8,
             child: const GlassyBackButton(),
+          ),
+          // Filter button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            right: 8,
+            child: GestureDetector(
+              onTap: () => _showFilterDialog(context),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.filter_list,
+                      color: Colors.black,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -169,11 +215,13 @@ class _HofFriendsScreenState extends State<HofFriendsScreen> {
                     vertical: 12,
                   ),
                   leading: CircleAvatar(
+                    radius: 30,
                     backgroundColor: Colors.purple,
                     child: Text(
                       user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
                       style: const TextStyle(
                         color: Colors.white,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

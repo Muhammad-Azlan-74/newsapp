@@ -1,3 +1,5 @@
+import 'package:newsapp/core/utils/date_formatter.dart';
+
 /// Rumor Model
 ///
 /// Represents a rumor (news with red color and "Other" type)
@@ -7,7 +9,7 @@ class Rumor {
   final String title;
   final String description;
   final String summary;
-  final String publishedDate;
+  final String _publishedDate;
   final String type;
   final Map<String, dynamic> source;
   final String color;
@@ -21,14 +23,17 @@ class Rumor {
     required this.title,
     required this.description,
     required this.summary,
-    required this.publishedDate,
+    required String publishedDate,
     required this.type,
     required this.source,
     required this.color,
     required this.league,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : _publishedDate = publishedDate;
+
+  /// Get formatted published date (HH:mm dd,MMM)
+  String get publishedDate => DateFormatter.format(_publishedDate);
 
   factory Rumor.fromJson(Map<String, dynamic> json) {
     return Rumor(
@@ -54,7 +59,7 @@ class Rumor {
       'title': title,
       'description': description,
       'summary': summary,
-      'publishedDate': publishedDate,
+      'publishedDate': _publishedDate,
       'type': type,
       'source': source,
       'color': color,
@@ -65,50 +70,20 @@ class Rumor {
   }
 }
 
-/// Rumors Response Model
-class RumorsResponse {
-  final List<Rumor> rumors;
-  final int count;
-  final PaginationInfo pagination;
+/// Single Rumor Response Model
+///
+/// API now returns a single rumor in the data field
+class RumorResponse {
+  final Rumor? rumor;
 
-  RumorsResponse({
-    required this.rumors,
-    required this.count,
-    required this.pagination,
+  RumorResponse({
+    required this.rumor,
   });
 
-  factory RumorsResponse.fromJson(Map<String, dynamic> json) {
-    return RumorsResponse(
-      rumors: (json['data'] as List?)
-              ?.map((item) => Rumor.fromJson(item))
-              .toList() ??
-          [],
-      count: json['count'] ?? 0,
-      pagination: PaginationInfo.fromJson(json['pagination'] ?? {}),
-    );
-  }
-}
-
-/// Pagination Info Model
-class PaginationInfo {
-  final int currentPage;
-  final int totalPages;
-  final int totalCount;
-  final int limit;
-
-  PaginationInfo({
-    required this.currentPage,
-    required this.totalPages,
-    required this.totalCount,
-    required this.limit,
-  });
-
-  factory PaginationInfo.fromJson(Map<String, dynamic> json) {
-    return PaginationInfo(
-      currentPage: json['currentPage'] ?? 1,
-      totalPages: json['totalPages'] ?? 0,
-      totalCount: json['totalCount'] ?? 0,
-      limit: json['limit'] ?? 10,
+  factory RumorResponse.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    return RumorResponse(
+      rumor: data != null ? Rumor.fromJson(data) : null,
     );
   }
 }

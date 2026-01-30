@@ -35,6 +35,9 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # Date formatting
+  intl: ^0.19.0
+
   # HTTP client for API calls
   dio: ^5.4.0
 
@@ -52,6 +55,9 @@ dependencies:
 
   # Image picker for uploading pictures
   image_picker: ^1.0.4
+
+  # Permission handler for requesting permissions
+  permission_handler: ^11.3.1
 
   # Cached network image for downloading and caching images
   cached_network_image: ^3.3.0

@@ -28,9 +28,14 @@ class AppColors {
 
   // ==================== Status Colors ====================
   static const Color success = Color(0xFF4CAF50);
-  static const Color error = Color(0xFFF44336);
+  static const Color error = Color(0xFFB55454); // Muted red
   static const Color warning = Color(0xFFFFC107);
   static const Color info = Color(0xFF2196F3);
+
+  // ==================== App Red (Muted) ====================
+  static const Color red = Color(0xFFB55454); // Muted/dull red
+  static const Color redLight = Color(0xFFC76A6A);
+  static const Color redDark = Color(0xFF8B4242);
 
   // ==================== Neutral Colors ====================
   static const Color white = Color(0xFFFFFFFF);

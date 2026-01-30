@@ -58,7 +58,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         // Always save user data for the session
-        // Save token only if remember me is checked
         final userData = response.user ?? {'email': _emailController.text};
         await AuthStorageService.saveUserData(userData);
 
@@ -67,12 +66,19 @@ class _LoginScreenState extends State<LoginScreen> {
           await AuthStorageService.saveSelectedTeam(userData['selectedTeam'] as String);
         }
 
-        if (_rememberMe) {
+        // Always save the token to persist the session
+        // Debug: Print token to verify it's being received
+        debugPrint('Login successful, saving token: ${response.accessToken.isNotEmpty ? "Token received (${response.accessToken.length} chars)" : "EMPTY TOKEN!"}');
+
+        if (response.accessToken.isNotEmpty) {
           await AuthStorageService.saveToken(response.accessToken);
-          await AuthStorageService.saveRememberMe(true);
+          await AuthStorageService.saveRememberMe(true); // Always remember the session
+
+          // Verify the token was saved
+          final savedToken = await AuthStorageService.getToken();
+          debugPrint('Token verification: ${savedToken != null && savedToken.isNotEmpty ? "Saved successfully" : "SAVE FAILED!"}');
         } else {
-          // For current session only, save token temporarily
-          await AuthStorageService.saveToken(response.accessToken);
+          debugPrint('ERROR: Empty access token received from API!');
         }
 
         // Fetch favorite teams and cache team images

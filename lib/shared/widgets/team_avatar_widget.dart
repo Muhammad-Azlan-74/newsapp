@@ -152,9 +152,9 @@ class _TeamAvatarWidgetState extends State<TeamAvatarWidget> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          width: 100,
-          height: 100,
-          padding: const EdgeInsets.all(4),
+          width: 150,
+          height: 150,
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.transparent,
@@ -170,8 +170,8 @@ class _TeamAvatarWidgetState extends State<TeamAvatarWidget> {
             child: _isNetworkImage
                 ? Image.file(
                     File(_teamLogoPath!),
-                    width: 100,
-                    height: 100,
+                    width: 150,
+                    height: 150,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return _buildFallbackIcon();
@@ -179,8 +179,8 @@ class _TeamAvatarWidgetState extends State<TeamAvatarWidget> {
                   )
                 : Image.asset(
                     _teamLogoPath!,
-                    width: 100,
-                    height: 100,
+                    width: 150,
+                    height: 150,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return _buildFallbackIcon();
@@ -194,12 +194,12 @@ class _TeamAvatarWidgetState extends State<TeamAvatarWidget> {
 
   Widget _buildFallbackIcon() {
     return Container(
-      width: 100,
-      height: 100,
+      width: 150,
+      height: 150,
       color: Colors.grey[800],
       child: const Icon(
         Icons.person,
-        size: 50,
+        size: 75,
         color: Colors.white,
       ),
     );

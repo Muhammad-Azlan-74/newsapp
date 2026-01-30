@@ -13,10 +13,8 @@ class RumorRepository {
 
   RumorRepository(this._apiClient);
 
-  /// Get rumors with pagination
-  Future<RumorsResponse> getRumors({
-    int page = 1,
-    int limit = 10,
+  /// Get the latest rumor
+  Future<RumorResponse> getRumor({
     String? teamId,
   }) async {
     try {
@@ -26,10 +24,7 @@ class RumorRepository {
       }
 
       // Build query parameters
-      final queryParams = <String, dynamic>{
-        'page': page.toString(),
-        'limit': limit.toString(),
-      };
+      final queryParams = <String, dynamic>{};
 
       if (teamId != null && teamId.isNotEmpty) {
         queryParams['teamId'] = teamId;
@@ -46,7 +41,7 @@ class RumorRepository {
         ),
       );
 
-      return RumorsResponse.fromJson(response.data as Map<String, dynamic>);
+      return RumorResponse.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       _handleDioError(e);
       rethrow;

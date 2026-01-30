@@ -10,36 +10,56 @@ class ConferenceRoomOverlays {
 
   /// Overlay 1 - Placeholder coordinates (edit these yourself)
   static BuildingOverlay get overlay1 => const BuildingOverlay(
-        left: 0.1,
-        top: 0.2,
-        width: 0.25,
-        height: 0.15,
+        left: 0.2,
+        top: 0.6,
+        width: 0.6,
+        height: 0.1,
         label: 'Overlay 1',
       );
 
   /// Overlay 2 - Placeholder coordinates (edit these yourself)
   static BuildingOverlay get overlay2 => const BuildingOverlay(
-        left: 0.4,
-        top: 0.3,
-        width: 0.25,
-        height: 0.15,
+        left: 0.17,
+        top: 0.47,
+        width: 0.15,
+        height: 0.12,
         label: 'Overlay 2',
       );
 
   /// Overlay 3 - Placeholder coordinates (edit these yourself)
   static BuildingOverlay get overlay3 => const BuildingOverlay(
-        left: 0.65,
-        top: 0.5,
-        width: 0.25,
-        height: 0.15,
+    left: 0.7,
+    top: 0.47,
+    width: 0.15,
+    height: 0.12,
         label: 'Overlay 3',
       );
+
+  /// Overlay 4 - Placeholder coordinates (edit these yourself)
+  static BuildingOverlay get overlay4 => const BuildingOverlay(
+    left: 0.12,
+    top: 0.15,
+    width: 0.13,
+    height: 0.33,
+    label: 'Overlay 4',
+  );
+
+  /// Overlay 5 - Placeholder coordinates (edit these yourself)
+  static BuildingOverlay get overlay5 => const BuildingOverlay(
+    left: 0.75,
+    top: 0.15,
+    width: 0.13,
+    height: 0.33,
+    label: 'Overlay 5',
+  );
 
   /// Map of overlay names to their circular/rectangular shape
   static const Map<String, bool> shapeMap = {
     'Overlay 1': false, // Rectangular - change to true for circular
     'Overlay 2': false, // Rectangular - change to true for circular
     'Overlay 3': false, // Rectangular - change to true for circular
+    'Overlay 4': false, // Rectangular - change to true for circular
+    'Overlay 5': false, // Rectangular - change to true for circular
   };
 
   /// Map of overlay names to their colors
@@ -47,6 +67,8 @@ class ConferenceRoomOverlays {
     'Overlay 1': Colors.blue,
     'Overlay 2': Colors.blue,
     'Overlay 3': Colors.blue,
+    'Overlay 4': Colors.purple,
+    'Overlay 5': Colors.orange,
   };
 
   /// Map of overlay names to their icons
@@ -54,6 +76,8 @@ class ConferenceRoomOverlays {
     'Overlay 1': Icons.location_on,
     'Overlay 2': Icons.location_on,
     'Overlay 3': Icons.location_on,
+    'Overlay 4': Icons.location_on,
+    'Overlay 5': Icons.location_on,
   };
 
   /// Get all overlays as a list
@@ -61,6 +85,8 @@ class ConferenceRoomOverlays {
         overlay1,
         overlay2,
         overlay3,
+        overlay4,
+        overlay5,
       ];
 
   /// Check if an overlay should be circular

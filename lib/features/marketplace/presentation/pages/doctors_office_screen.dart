@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/constants/doctors_office_overlay_coordinates.dart';
 import 'package:newsapp/features/marketplace/presentation/widgets/interactive_overlay_area.dart';
@@ -6,6 +7,7 @@ import 'package:newsapp/shared/widgets/medlab_menu_dialog.dart';
 import 'package:newsapp/shared/widgets/team_avatar_widget.dart';
 import 'package:newsapp/shared/widgets/welcome_chat_bubble.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
+import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 
 /// Doctors Office Screen
 ///
@@ -19,6 +21,7 @@ class DoctorsOfficeScreen extends StatefulWidget {
 
 class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
   bool _showHelpBubble = false;
+  bool _showHelpLabels = false;
 
   @override
   void initState() {
@@ -31,6 +34,73 @@ class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
         });
       }
     });
+  }
+
+  /// Toggle help labels visibility for 5 seconds
+  void _toggleHelpLabels() {
+    if (_showHelpLabels) return; // Already showing
+
+    setState(() {
+      _showHelpLabels = true;
+    });
+
+    // Hide after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showHelpLabels = false;
+        });
+      }
+    });
+  }
+
+  /// Build a help label widget (same design as marketplace labels)
+  Widget _buildHelpLabel(String text) {
+    return AnimatedOpacity(
+      opacity: _showHelpLabels ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 300),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.7),
+                    offset: const Offset(1, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /// Build the list of interactive overlays
@@ -141,7 +211,7 @@ class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
               if (_showHelpBubble)
                 WelcomeChatBubble(
                   isFirstTime: false,
-                  customMessage: 'Hi! How can I help you?',
+                  customMessage: 'Want to know about med news?',
                   onDismissed: () {
                     setState(() {
                       _showHelpBubble = false;
@@ -154,6 +224,20 @@ class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
                 left: 16,
                 child: GlassyBackButton(),
               ),
+              // Help button
+              Positioned(
+                top: 40,
+                right: 16,
+                child: GlassyHelpButton(onPressed: _toggleHelpLabels),
+              ),
+              // Help label for MRI Machine (Area 1)
+              // Area 1: left: 0.001, top: 0.27, width: 0.55, height: 0.32
+              if (_showHelpLabels)
+                Positioned(
+                  left: 0.001 * screenWidth + 5,
+                  top: 0.27 * screenHeight + 5,
+                  child: _buildHelpLabel('MRI Machine'),
+                ),
             ],
           );
         },

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/shared/widgets/team_avatar_widget.dart';
-import 'package:newsapp/shared/widgets/welcome_chat_bubble.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
+import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/welcome_chat_bubble.dart';
 import 'package:newsapp/core/network/api_client.dart';
 import 'package:newsapp/features/user/data/repositories/tv_studio_news_repository.dart';
 import 'package:newsapp/features/user/data/models/tv_studio_news_model.dart';
@@ -22,9 +23,11 @@ class StudioTvScreen extends StatefulWidget {
 class _StudioTvScreenState extends State<StudioTvScreen> {
   bool _showNews = false;
   bool _showHelpBubble = false;
+  bool _showHelpLabels = false;
   late final TvStudioNewsRepository _tvStudioNewsRepository;
   List<TvStudioNews>? _tvStudioNews;
   bool _isLoading = true;
+  bool _isLoadingMore = false;
   String? _errorMessage;
   int _currentPage = 1;
   int _totalPages = 1;
@@ -35,15 +38,7 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
     super.initState();
     _tvStudioNewsRepository = TvStudioNewsRepository(ApiClient());
     _scrollController.addListener(_onScroll);
-
-    // Show welcome message after a short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _showHelpBubble = true;
-        });
-      }
-    });
+    _loadTvStudioNews();
   }
 
   @override
@@ -53,10 +48,11 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      if (!_isLoading && _currentPage < _totalPages) {
-        _loadMoreTvStudioNews();
-      }
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !_isLoadingMore &&
+        _currentPage < _totalPages) {
+      _loadMoreTvStudioNews();
     }
   }
 
@@ -67,12 +63,11 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
         _errorMessage = null;
       });
 
-      // Get selected team ID if available
       final teamId = await AuthStorageService.getSelectedTeam();
 
       final response = await _tvStudioNewsRepository.getTvStudioNews(
         page: 1,
-        limit: 10,
+        limit: 20,
         teamId: teamId,
       );
 
@@ -81,34 +76,236 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
         _currentPage = response.pagination.currentPage;
         _totalPages = response.pagination.totalPages;
         _isLoading = false;
-        _showNews = true;
       });
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
-        _showNews = true;
       });
     }
   }
 
   Future<void> _loadMoreTvStudioNews() async {
+    if (_isLoadingMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
     try {
       final teamId = await AuthStorageService.getSelectedTeam();
 
       final response = await _tvStudioNewsRepository.getTvStudioNews(
         page: _currentPage + 1,
-        limit: 10,
+        limit: 20,
         teamId: teamId,
       );
 
       setState(() {
         _tvStudioNews?.addAll(response.tvStudioNews);
         _currentPage = response.pagination.currentPage;
+        _isLoadingMore = false;
       });
     } catch (e) {
-      // Silently fail for pagination errors
+      setState(() {
+        _isLoadingMore = false;
+      });
     }
+  }
+
+  /// Toggle help labels visibility for 5 seconds
+  void _toggleHelpLabels() {
+    if (_showHelpLabels) return; // Already showing
+
+    setState(() {
+      _showHelpLabels = true;
+    });
+
+    // Hide after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showHelpLabels = false;
+        });
+      }
+    });
+  }
+
+  /// Build a help label widget
+  Widget _buildHelpLabel(String text) {
+    return AnimatedOpacity(
+      opacity: _showHelpLabels ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 300),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.7),
+                    offset: const Offset(1, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showNewsDetail(TvStudioNews news) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(20),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.75,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Text(
+                              'TV STUDIO',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            news.league,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Body
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              news.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              news.description.isNotEmpty
+                                  ? news.description
+                                  : news.summary,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 16,
+                                height: 1.6,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              news.publishedDate,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -128,26 +325,38 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
               ),
             ),
           ),
+          // Blue overlay - tap to show news
+          Positioned(
+            top: MediaQuery.of(context).size.height * 0.24,
+            left: MediaQuery.of(context).size.width * 0.5,
+             width: MediaQuery.of(context).size.width * 0.5,
+            height: MediaQuery.of(context).size.height * 0.2,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _showNews = true;
+                });
+              },
+              child: Container(
+                color: Colors.transparent,
+              ),
+            ),
+          ),
           // TV Studio news overlay
           if (_showNews) _buildNewsOverlay(),
           // Team anchor avatar in bottom left
           TeamAvatarWidget(
             imageType: 'anchor',
-            onTap: () {
-              if (_showNews) {
-                setState(() {
-                  _showNews = false;
-                });
-              } else {
-                _loadTvStudioNews();
-              }
+            onTap: () {setState(() {
+                _showHelpBubble = true;
+              });
             },
           ),
-          // Help chat bubble (appears on screen load)
-          if (_showHelpBubble && !_showNews)
+          // Help chat bubble
+          if (_showHelpBubble)
             WelcomeChatBubble(
               isFirstTime: false,
-              customMessage: 'Hi! How can I help you?',
+              customMessage: 'Click on the Breaking News board to read the latest stories!',
               onDismissed: () {
                 setState(() {
                   _showHelpBubble = false;
@@ -160,6 +369,19 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
             left: 16,
             child: GlassyBackButton(),
           ),
+          // Help button
+          Positioned(
+            top: 40,
+            right: 16,
+            child: GlassyHelpButton(onPressed: _toggleHelpLabels),
+          ),
+          // Help label for Breaking News
+          if (_showHelpLabels)
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.24 + 10,
+              left: MediaQuery.of(context).size.width * 0.5 + 10,
+              child: _buildHelpLabel('Breaking News'),
+            ),
         ],
       ),
     );
@@ -199,11 +421,11 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
                               topRight: Radius.circular(16),
                             ),
                           ),
-                          child: Row(
+                          child: const Row(
                             children: [
-                              const Icon(Icons.tv, color: Colors.white, size: 28),
-                              const SizedBox(width: 12),
-                              const Text(
+                              Icon(Icons.tv, color: Colors.white, size: 28),
+                              SizedBox(width: 12),
+                              Text(
                                 'TV Studio News',
                                 style: TextStyle(
                                   color: Colors.white,
@@ -293,13 +515,13 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
     }
 
     if (_tvStudioNews == null || _tvStudioNews!.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.tv_off, size: 64, color: Colors.white70),
-            const SizedBox(height: 16),
-            const Text(
+            Icon(Icons.tv_off, size: 64, color: Colors.white70),
+            SizedBox(height: 16),
+            Text(
               'No TV Studio news available',
               style: TextStyle(
                 color: Colors.white,
@@ -312,108 +534,56 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
       );
     }
 
-    return ListView.builder(
+    return ListView.separated(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      itemCount: _tvStudioNews!.length + (_isLoading ? 1 : 0),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: _tvStudioNews!.length + (_isLoadingMore ? 1 : 0),
+      separatorBuilder: (_, __) => Divider(
+        color: Colors.white.withOpacity(0.15),
+        height: 1,
+        indent: 16,
+        endIndent: 16,
+      ),
       itemBuilder: (context, index) {
         if (index == _tvStudioNews!.length) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(
               child: CircularProgressIndicator(color: Colors.white),
             ),
           );
         }
-
         final news = _tvStudioNews![index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: const Text(
-                              'TV STUDIO',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            news.league,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        news.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        news.summary,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        news.publishedDate,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 6,
+          ),
+          title: Text(
+            news.title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              news.publishedDate,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 11,
               ),
             ),
           ),
+          trailing: Icon(
+            Icons.chevron_right,
+            color: Colors.white.withOpacity(0.5),
+          ),
+          onTap: () => _showNewsDetail(news),
         );
       },
     );

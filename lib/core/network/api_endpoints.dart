@@ -36,6 +36,9 @@ class ApiEndpoints {
   /// Unlike Hall of Fame entry
   static const String hofUnlike = '/api/halloffame/unlike';
 
+  /// Add caption to Hall of Fame picture
+  static const String hofCaption = '/api/halloffame/caption';
+
   // News endpoints
   static const String rumors = '/api/news/rumors';
   static const String medicalNews = '/api/news/medical';
@@ -56,4 +59,41 @@ class ApiEndpoints {
   /// Usage: ApiEndpoints.deleteNotification('notificationId')
   static String deleteNotification(String notificationId) =>
       '/api/notifications/$notificationId';
+
+  // Game endpoints
+  /// Get all user cards
+  static const String userCards = '/api/game/cards';
+
+  /// Rookie draft - get 5 new random cards (once per 20 minutes)
+  static const String rookieDraft = '/api/game/rookie-draft';
+
+  /// Update attack lineup (4 player cards + 1 synergy card)
+  static const String updateAttack = '/api/game/update-attack';
+
+  /// Update defense lineup (4 player cards + 1 synergy card)
+  static const String updateDefense = '/api/game/update-defense';
+
+  /// Get attack lineup (returns saved attack lineup)
+  static const String attackLineup = '/api/game/attack-lineup';
+
+  /// Get defense lineup (returns saved defense lineup)
+  static const String defenseLineup = '/api/game/defense-lineup';
+
+  /// Get attack available cards (cards not in defense lineup)
+  static const String attackAvailableCards = '/api/game/attack-available-cards';
+
+  /// Get defense available cards (cards not in attack lineup)
+  static const String defenseAvailableCards = '/api/game/defense-available-cards';
+
+  /// Get all users for attack
+  static const String attackUsers = '/api/game/users';
+
+  /// Initiate attack on a user
+  static const String initiateAttack = '/api/game/attack';
+
+  /// Get defense match (check if user is being attacked)
+  static const String defenseMatch = '/api/game/defense-match';
+
+  /// Get matches history (attack, defense, or all)
+  static const String matches = '/api/game/matches';
 }

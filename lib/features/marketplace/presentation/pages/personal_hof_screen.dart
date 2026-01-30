@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:newsapp/core/constants/app_constants.dart';
+import 'dart:ui';
 import 'package:newsapp/shared/widgets/glassy_button.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
+import 'package:newsapp/shared/widgets/custom_snackbar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:newsapp/core/network/api_client.dart';
 import 'package:newsapp/features/user/data/repositories/hof_repository.dart';
@@ -27,12 +28,23 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
   bool _isLoading = true;
   bool _isUploading = false;
   String? _errorMessage;
+  int _selectedIndex = 0;
+  final ScrollController _thumbnailScrollController = ScrollController();
+  final TextEditingController _captionController = TextEditingController();
+  bool _isSavingCaption = false;
 
   @override
   void initState() {
     super.initState();
     _hofRepository = HofRepository(ApiClient());
     _loadHallOfFame();
+  }
+
+  @override
+  void dispose() {
+    _thumbnailScrollController.dispose();
+    _captionController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadHallOfFame() async {
@@ -59,6 +71,11 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
       setState(() {
         _hallOfFame = response.hallOfFame;
         _isLoading = false;
+        _selectedIndex = 0;
+        // Set caption controller with first image's caption
+        if (_hallOfFame != null && _hallOfFame!.images.isNotEmpty) {
+          _captionController.text = _hallOfFame!.images[0].caption ?? '';
+        }
       });
     } catch (e) {
       setState(() {
@@ -87,44 +104,20 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
         _isUploading = true;
       });
 
-      // Show loading indicator
+      // Show uploading message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-                SizedBox(width: 16),
-                Text('Uploading image...'),
-              ],
-            ),
-            duration: Duration(seconds: 30),
-          ),
-        );
+        CustomSnackbar.show(context, 'Uploading picture...');
       }
 
       // Upload the image to backend
       final response = await _hofRepository.uploadPicture(image.path);
 
-      // Hide loading snackbar
+      // Hide loading snackbar and show success
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
 
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response.message),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        CustomSnackbar.show(context, 'Picture uploaded successfully!');
 
         // Reload the Hall of Fame to show the new image
         await _loadHallOfFame();
@@ -140,12 +133,10 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
         ScaffoldMessenger.of(context).clearSnackBars();
 
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload failed: ${e.toString().replaceAll('ApiException: ', '')}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        CustomSnackbar.show(
+          context,
+          'Upload failed: ${e.toString().replaceAll('ApiException: ', '')}',
+          isError: true,
         );
 
         // Clear uploading state
@@ -156,7 +147,75 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
     }
   }
 
-  Widget _buildImageGallery() {
+  void _onThumbnailTap(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    // Update caption controller with selected image's caption
+    if (_hallOfFame != null && _hallOfFame!.images.isNotEmpty) {
+      _captionController.text = _hallOfFame!.images[index].caption ?? '';
+    }
+    // Scroll to center the selected thumbnail
+    _scrollToCenter(index);
+  }
+
+  Future<void> _saveCaption() async {
+    if (_hallOfFame == null || _hallOfFame!.images.isEmpty) return;
+
+    final selectedImage = _hallOfFame!.images[_selectedIndex];
+    final caption = _captionController.text.trim();
+
+    try {
+      setState(() {
+        _isSavingCaption = true;
+      });
+
+      await _hofRepository.addCaption(selectedImage.id, caption);
+
+      if (mounted) {
+        CustomSnackbar.show(context, 'Caption saved successfully!');
+        // Reload to get updated data
+        await _loadHallOfFame();
+        // Restore the selected index and caption
+        if (_hallOfFame != null && _hallOfFame!.images.length > _selectedIndex) {
+          _captionController.text = _hallOfFame!.images[_selectedIndex].caption ?? '';
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          'Failed to save caption: ${e.toString().replaceAll('ApiException: ', '')}',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingCaption = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToCenter(int index) {
+    if (_hallOfFame == null || _hallOfFame!.images.isEmpty) return;
+    if (!_thumbnailScrollController.hasClients) return;
+
+    const thumbnailWidth = 60.0;
+    const thumbnailSpacing = 8.0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final targetOffset = (index * (thumbnailWidth + thumbnailSpacing)) -
+        (screenWidth / 2) + (thumbnailWidth / 2) + 16;
+
+    _thumbnailScrollController.animateTo(
+      targetOffset.clamp(0, _thumbnailScrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Widget _buildContent() {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.black),
@@ -172,9 +231,9 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Error loading Hall of Fame',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -204,21 +263,21 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.photo_library_outlined, size: 64, color: Colors.black54),
-              const SizedBox(height: 16),
+            children: const [
+              Icon(Icons.photo_library_outlined, size: 64, color: Colors.black54),
+              SizedBox(height: 16),
               Text(
                 'No pictures yet',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'Upload your first picture to get started!',
-                style: const TextStyle(color: Colors.black87),
+                style: TextStyle(color: Colors.black87),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -227,80 +286,188 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
       );
     }
 
-    // Horizontal circular scroll for images with scale effect
-    final pageController = PageController(
-      viewportFraction: 0.85,
-      initialPage: _hallOfFame!.images.length * 1000, // Start in the middle for circular effect
-    );
+    final selectedImage = _hallOfFame!.images[_selectedIndex];
 
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.7,
-      child: PageView.builder(
-        controller: pageController,
-        itemCount: null, // Infinite scroll for circular effect
-        itemBuilder: (context, index) {
-          // Get actual image index using modulo for circular scroll
-          final actualIndex = index % _hallOfFame!.images.length;
-          final image = _hallOfFame!.images[actualIndex];
+    return Column(
+      children: [
+        SizedBox(height: MediaQuery.of(context).padding.top + 60),
 
-          return AnimatedBuilder(
-            animation: pageController,
-            builder: (context, child) {
-              double value = 1.0;
-              double offset = 0.0;
+        // Horizontal thumbnail list at top
+        SizedBox(
+          height: 70,
+          child: ListView.builder(
+            controller: _thumbnailScrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _hallOfFame!.images.length,
+            itemBuilder: (context, index) {
+              final image = _hallOfFame!.images[index];
+              final isSelected = index == _selectedIndex;
 
-              if (pageController.position.haveDimensions) {
-                value = pageController.page! - index;
-                // Scale: items further from center are smaller
-                double scale = (1 - (value.abs() * 0.3)).clamp(0.7, 1.0);
-                // Vertical offset: items further from center move down in an arc
-                offset = (value.abs() * 80); // Adjust this value to control arc height
-
-                return Transform.translate(
-                  offset: Offset(0, offset),
-                  child: Center(
-                    child: SizedBox(
-                      height: Curves.easeInOut.transform(scale) * MediaQuery.of(context).size.height * 0.65,
-                      width: Curves.easeInOut.transform(scale) * MediaQuery.of(context).size.width * 0.8,
-                      child: child,
+              return GestureDetector(
+                onTap: () => _onThumbnailTap(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? Colors.black : Colors.white.withOpacity(0.5),
+                      width: isSelected ? 3 : 1.5,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: CachedNetworkImage(
+                      imageUrl: image.url,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                        child: const Icon(Icons.error, size: 20),
+                      ),
                     ),
                   ),
-                );
-              }
-
-              return Center(
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.65,
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  child: child,
                 ),
               );
             },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: CachedNetworkImage(
-                  imageUrl: image.url,
-                  fit: BoxFit.fill,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey.withOpacity(0.3),
-                    child: const Center(
-                      child: CircularProgressIndicator(color: Colors.black),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey.withOpacity(0.3),
-                    child: const Center(
-                      child: Icon(Icons.error_outline, color: Colors.red, size: 48),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Large centered image
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                // Large image
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: CachedNetworkImage(
+                      imageUrl: selectedImage.url,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Colors.black),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                        child: const Center(
+                          child: Icon(Icons.error_outline, color: Colors.red, size: 48),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+
+                const SizedBox(height: 8),
+
+                // Caption text field with save button
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: TextField(
+                              controller: _captionController,
+                              decoration: const InputDecoration(
+                                hintText: 'Add a caption...',
+                                hintStyle: TextStyle(color: Colors.black54, fontSize: 13),
+                                border: InputBorder.none,
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                isDense: true,
+                              ),
+                              style: const TextStyle(color: Colors.black, fontSize: 13),
+                              maxLines: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Save button
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _isSavingCaption ? null : _saveCaption,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              height: 40,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: _isSavingCaption
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Save',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -320,52 +487,59 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
               ),
             ),
           ),
-          // Image gallery in center
-          Center(
-            child: _buildImageGallery(),
-          ),
+          // Content
+          _buildContent(),
           // Back button
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 8,
             child: const GlassyBackButton(),
           ),
-          // Total likes in top right corner
-          if (_hallOfFame != null)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.favorite,
-                      color: Colors.red,
-                      size: 18,
+          // Likes count (replaced help button)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 8,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${_hallOfFame!.likes}',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.favorite,
+                        color: Colors.red,
+                        size: 20,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Text(
+                        '${_hallOfFame?.likes ?? 0}',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
+          ),
           // Upload button in bottom right
           Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 24,
-            right: 24,
+            bottom: MediaQuery.of(context).padding.bottom + 16,
+            right: 16,
             child: GlassyButton(
               onPressed: _isUploading ? () {} : _uploadPicture,
               text: 'Upload Picture',
