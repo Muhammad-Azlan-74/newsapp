@@ -8,6 +8,8 @@ import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:newsapp/core/services/auth_storage_service.dart';
 import 'package:newsapp/core/utils/jwt_decoder.dart';
+import 'package:newsapp/shared/widgets/custom_snackbar.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Friend HOF Screen
 ///
@@ -168,6 +170,191 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
     );
   }
 
+  /// Show dialog to make an offer on a picture
+  Future<void> _showMakeOfferDialog(String imageId, double? currentSaleAmount) async {
+    final TextEditingController offerController = TextEditingController();
+
+    final result = await showDialog<double>(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.local_offer, size: 28, color: Colors.blue.shade700),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Make an Offer',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (currentSaleAmount != null)
+                        Text(
+                          'Asking price: \$${currentSaleAmount.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Your Offer Amount',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: offerController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          hintText: 'Enter amount',
+                          hintStyle: TextStyle(color: Colors.grey.shade600),
+                          prefixText: '\$ ',
+                          prefixStyle: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.7),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                        ),
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                final amount = double.tryParse(offerController.text);
+                                if (amount != null && amount > 0) {
+                                  Navigator.pop(context, amount);
+                                } else {
+                                  Navigator.pop(context);
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade700,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Submit Offer',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result != null && result > 0) {
+      await _makeOffer(imageId, result);
+    }
+  }
+
+  /// Make an offer on a picture
+  Future<void> _makeOffer(String imageId, double amount) async {
+    try {
+      final response = await _hofRepository.makeOffer(
+        hofUserId: widget.userId,
+        imageId: imageId,
+        amount: amount,
+      );
+
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          response.message,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          e.toString().replaceAll('ApiException: ', ''),
+          isError: true,
+        );
+      }
+    }
+  }
+
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(
@@ -245,64 +432,6 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
       children: [
         SizedBox(height: MediaQuery.of(context).padding.top + 60),
 
-        // Horizontal thumbnail list at top
-        SizedBox(
-          height: 70,
-          child: ListView.builder(
-            controller: _thumbnailScrollController,
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _hallOfFame!.images.length,
-            itemBuilder: (context, index) {
-              final image = _hallOfFame!.images[index];
-              final isSelected = index == _selectedIndex;
-
-              return GestureDetector(
-                onTap: () => _onThumbnailTap(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isSelected ? Colors.black : Colors.white.withOpacity(0.5),
-                      width: isSelected ? 3 : 1.5,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: CachedNetworkImage(
-                      imageUrl: image.url,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey.withOpacity(0.3),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey.withOpacity(0.3),
-                        child: const Icon(Icons.error, size: 20),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
         // Large centered image with caption
         Expanded(
           child: Padding(
@@ -311,26 +440,87 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
               children: [
                 // Large image
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: CachedNetworkImage(
-                      imageUrl: selectedImage.url,
-                      fit: BoxFit.contain,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey.withOpacity(0.3),
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.black),
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: CachedNetworkImage(
+                        imageUrl: selectedImage.url,
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey.withOpacity(0.3),
+                          child: const Center(
+                            child: CircularProgressIndicator(color: Colors.black),
+                          ),
                         ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey.withOpacity(0.3),
-                        child: const Center(
-                          child: Icon(Icons.error_outline, color: Colors.red, size: 48),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey.withOpacity(0.3),
+                          child: const Center(
+                            child: Icon(Icons.error_outline, color: Colors.red, size: 48),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 8),
+
+
+                // Sale status label
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selectedImage.isForSale
+                            ? Colors.green.withOpacity(0.25)
+                            : Colors.red.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: selectedImage.isForSale
+                              ? Colors.green.withOpacity(0.5)
+                              : Colors.red.withOpacity(0.5),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            selectedImage.isForSale ? Icons.attach_money : Icons.block,
+                            color: selectedImage.isForSale ? Colors.green.shade800 : Colors.red.shade800,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            selectedImage.isForSale
+                                ? 'For Sale: \$${selectedImage.saleAmount?.toStringAsFixed(0) ?? "0"}'
+                                : 'Not For Sale',
+                            style: TextStyle(
+                              color: selectedImage.isForSale ? Colors.green.shade900 : Colors.red.shade900,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Make Offer button (only shown if for sale)
+                if (selectedImage.isForSale) ...[
+                  const SizedBox(height: 8),
+                  GlassyButton(
+                    text: 'Make Offer',
+                    onPressed: () => _showMakeOfferDialog(selectedImage.id, selectedImage.saleAmount),
+                    icon: Icons.local_offer,
+                    backgroundColor: Colors.blue.withOpacity(0.3),
+                  ),
+                ],
 
                 // Caption display (if exists)
                 if (selectedImage.caption != null && selectedImage.caption!.isNotEmpty)
@@ -363,8 +553,66 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
                       ),
                     ),
                   ),
+
+                const SizedBox(height: 12),
               ],
             ),
+          ),
+        ),
+
+        // Horizontal thumbnail list at bottom
+        SizedBox(
+          height: 70,
+          child: ListView.builder(
+            controller: _thumbnailScrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _hallOfFame!.images.length,
+            itemBuilder: (context, index) {
+              final image = _hallOfFame!.images[index];
+              final isSelected = index == _selectedIndex;
+
+              return GestureDetector(
+                onTap: () => _onThumbnailTap(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? Colors.blue : Colors.white.withOpacity(0.5),
+                      width: isSelected ? 3 : 1.5,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: CachedNetworkImage(
+                      imageUrl: image.url,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                        child: const Icon(Icons.error, size: 20),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
 
@@ -451,8 +699,11 @@ class _FriendHofScreenState extends State<FriendHofScreen> {
                 isLoading: _isLiking,
               ),
             ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
   }
 }
+

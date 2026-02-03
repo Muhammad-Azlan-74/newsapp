@@ -4,6 +4,8 @@ import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/features/user/data/models/card_model.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
+import 'package:newsapp/core/services/card_storage_service.dart';
 
 /// Rookie Draft Screen
 ///
@@ -43,6 +45,13 @@ class _RookieDraftScreenState extends State<RookieDraftScreen>
         CurvedAnimation(parent: controller, curve: Curves.easeInOut),
       );
     }).toList();
+
+    // Auto-reveal all cards after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _revealAllCards();
+      }
+    });
   }
 
   @override
@@ -53,7 +62,7 @@ class _RookieDraftScreenState extends State<RookieDraftScreen>
     super.dispose();
   }
 
-  void _revealCard(int index) {
+  void _revealCard(int index) async {
     if (_isRevealed[index]) return;
 
     setState(() {
@@ -66,6 +75,10 @@ class _RookieDraftScreenState extends State<RookieDraftScreen>
       setState(() {
         _allRevealed = true;
       });
+      
+      // Save the draft time now that cards have been revealed
+      // This ensures cooldown only starts when user actually views the cards
+      await CardStorageService.saveLastRookieDraftTime(DateTime.now());
     }
   }
 
@@ -136,17 +149,16 @@ class _RookieDraftScreenState extends State<RookieDraftScreen>
                   centerTitle: true,
                   actions: [
                     if (!_allRevealed)
-                      TextButton(
-                        onPressed: _revealAllCards,
-                        child: const Text(
-                          'Reveal All',
-                          style: TextStyle(color: Colors.amber),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: TextButton(
+                          onPressed: _revealAllCards,
+                          child: const Text(
+                            'Reveal All',
+                            style: TextStyle(color: Colors.amber),
+                          ),
                         ),
                       ),
-                    const Padding(
-                      padding: EdgeInsets.only(right: 8.0),
-                      child: GlassyHelpButton(),
-                    ),
                   ],
                 ),
                 // Header text
@@ -211,6 +223,8 @@ class _RookieDraftScreenState extends State<RookieDraftScreen>
               ],
             ),
           ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
@@ -652,12 +666,6 @@ class RookieDraftCooldownScreen extends StatelessWidget {
                     ),
                   ),
                   centerTitle: true,
-                  actions: const [
-                    Padding(
-                      padding: EdgeInsets.only(right: 8.0),
-                      child: GlassyHelpButton(),
-                    ),
-                  ],
                 ),
                 // Body content
                 Expanded(
@@ -773,6 +781,8 @@ class RookieDraftCooldownScreen extends StatelessWidget {
               ],
             ),
           ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
@@ -793,3 +803,4 @@ class RookieDraftCooldownScreen extends StatelessWidget {
     return '$month $day at $hour12:$minute $period';
   }
 }
+

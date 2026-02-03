@@ -5,10 +5,13 @@ import 'package:newsapp/shared/widgets/team_avatar_widget.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 import 'package:newsapp/shared/widgets/welcome_chat_bubble.dart';
+import 'package:newsapp/shared/widgets/video_player_dialog.dart';
 import 'package:newsapp/core/network/api_client.dart';
 import 'package:newsapp/features/user/data/repositories/tv_studio_news_repository.dart';
 import 'package:newsapp/features/user/data/models/tv_studio_news_model.dart';
 import 'package:newsapp/core/services/auth_storage_service.dart';
+import 'package:newsapp/core/constants/studio_tv_overlay_coordinates.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Studio TV Screen
 ///
@@ -32,6 +35,7 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
   int _currentPage = 1;
   int _totalPages = 1;
   final ScrollController _scrollController = ScrollController();
+  String? _userName;
 
   @override
   void initState() {
@@ -39,6 +43,16 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
     _tvStudioNewsRepository = TvStudioNewsRepository(ApiClient());
     _scrollController.addListener(_onScroll);
     _loadTvStudioNews();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final name = await AuthStorageService.getUserName();
+    if (mounted) {
+      setState(() {
+        _userName = name;
+      });
+    }
   }
 
   @override
@@ -161,7 +175,7 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
               text,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.3,
                 shadows: [
@@ -308,6 +322,58 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
     );
   }
 
+  void _showVideoDialog(String videoPath) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return VideoPlayerDialog(videoPath: videoPath);
+      },
+    );
+  }
+
+  /// Build the interactive chair overlays using normalized coordinates
+  List<Widget> _buildChairOverlays(BuildContext context) {
+    final overlays = StudioTvOverlays.all;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return overlays.map((overlay) {
+      final label = overlay.label;
+      final videoPath = StudioTvOverlays.getVideoPath(label);
+      final color = StudioTvOverlays.getColor(label);
+
+      // Calculate positions based on normalized coordinates
+      final left = overlay.left * screenWidth;
+      final top = overlay.top * screenHeight;
+      final width = overlay.width * screenWidth;
+      final height = overlay.height * screenHeight;
+
+      return Positioned(
+        top: top,
+        left: left,
+        width: width,
+        height: height,
+        child: GestureDetector(
+          onTap: () {
+            if (label == 'Breaking News') {
+              // Show news dialog
+              setState(() {
+                _showNews = true;
+              });
+            } else if (videoPath != null) {
+              // Play video
+              _showVideoDialog(videoPath);
+            }
+          },
+          child: Container(
+            color: Colors.transparent,
+          ),
+        ),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -325,23 +391,8 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
               ),
             ),
           ),
-          // Blue overlay - tap to show news
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.24,
-            left: MediaQuery.of(context).size.width * 0.5,
-             width: MediaQuery.of(context).size.width * 0.5,
-            height: MediaQuery.of(context).size.height * 0.2,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _showNews = true;
-                });
-              },
-              child: Container(
-                color: Colors.transparent,
-              ),
-            ),
-          ),
+          // Interactive overlays with normalized coordinates (includes Breaking News, Studio 1, and Studio 2)
+          ..._buildChairOverlays(context),
           // TV Studio news overlay
           if (_showNews) _buildNewsOverlay(),
           // Team anchor avatar in bottom left
@@ -356,7 +407,7 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
           if (_showHelpBubble)
             WelcomeChatBubble(
               isFirstTime: false,
-              customMessage: 'Click on the Breaking News board to read the latest stories!',
+              customMessage: 'Hey ${_userName ?? 'there'}, click on the Breaking News board to read the latest stories!',
               onDismissed: () {
                 setState(() {
                   _showHelpBubble = false;
@@ -382,6 +433,21 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
               left: MediaQuery.of(context).size.width * 0.5 + 10,
               child: _buildHelpLabel('Breaking News'),
             ),
+          // Help labels for chair overlays
+          if (_showHelpLabels)
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.38 + 10,
+              left: MediaQuery.of(context).size.width * 0.09 + 10,
+              child: _buildHelpLabel('Studio 1'),
+            ),
+          if (_showHelpLabels)
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.38 + 10,
+              left: MediaQuery.of(context).size.width * 0.45 + 10,
+              child: _buildHelpLabel('Studio 2'),
+            ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
@@ -589,3 +655,4 @@ class _StudioTvScreenState extends State<StudioTvScreen> {
     );
   }
 }
+

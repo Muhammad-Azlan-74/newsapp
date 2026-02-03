@@ -69,6 +69,12 @@ class AppAssets {
   static const String fantasy2 = 'assets/images/fantasy2.png';
   static const String fantasy3 = 'assets/images/fantasy3.png';
 
+  /// Weekly schedule image for man cave
+  static const String weekly = 'assets/images/weekly.png';
+
+  /// HOF list background image
+  static const String hofList = 'assets/images/hof_list.png';
+
   // ==================== Team Logos ====================
 
   /// Kansas City Chiefs logo

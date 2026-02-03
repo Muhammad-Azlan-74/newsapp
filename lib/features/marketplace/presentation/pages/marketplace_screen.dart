@@ -12,6 +12,7 @@ import 'package:newsapp/app/routes.dart';
 import 'package:newsapp/shared/widgets/welcome_chat_bubble.dart';
 import 'package:newsapp/shared/widgets/team_avatar_widget.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Marketplace/Dashboard Screen
 ///
@@ -28,11 +29,22 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   bool _isFirstTime = false;
   bool _showHelpBubble = false;
   bool _showHelpLabels = false;
+  String? _userName;
 
   @override
   void initState() {
     super.initState();
     _checkAndShowWelcome();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final name = await AuthStorageService.getUserName();
+    if (mounted) {
+      setState(() {
+        _userName = name;
+      });
+    }
   }
 
   @override
@@ -89,7 +101,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               text,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 10,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.3,
                 shadows: [
@@ -100,7 +112,6 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                   ),
                 ],
               ),
-              maxLines: 2,
               textAlign: TextAlign.center,
             ),
           ),
@@ -108,7 +119,6 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       ),
     );
   }
-
 
   /// Check if user has logged in before and show welcome message
   Future<void> _checkAndShowWelcome() async {
@@ -354,26 +364,25 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           if (_showHelpBubble)
             WelcomeChatBubble(
               isFirstTime: false,
-              customMessage: 'Hi! How can I help you?',
+              customMessage: 'Hi ${_userName ?? 'there'}! How can I help you?',
               onDismissed: () {
                 setState(() {
                   _showHelpBubble = false;
                 });
               },
             ),
-          // Help button (top right)
+          // Help button (top right, below stats strip)
           Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
+            top: TopStatsStrip.getTotalHeight(context) + 10,
             right: 10,
             child: GlassyHelpButton(onPressed: _toggleHelpLabels),
           ),
-          // Help labels (only shown when help button is tapped)
-          // Social Bar - left: 0.07, top: 0.25
+          // Social-Bar - left: 0.07, top: 0.25
           if (_showHelpLabels)
             Positioned(
-              left: 0.07 * screenWidth + 5,
+              left: 0.01 * screenWidth,
               top: 0.25 * screenHeight + 5,
-              child: _buildHelpLabel('Social Bar', width: 45),
+              child: _buildHelpLabel('Social-Bar', width: 80),
             ),
           // Training Ground - left: 0.33, top: 0.15
           if (_showHelpLabels)
@@ -403,55 +412,36 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               top: 0.62 * screenHeight + 5,
               child: _buildHelpLabel('News Stand'),
             ),
-          // Screenbook (Sports Book) - left: 0.64, top: 0.32
+          // Sportsbook - left: 0.64, top: 0.32
           if (_showHelpLabels)
             Positioned(
               left: 0.64 * screenWidth + 5,
               top: 0.32 * screenHeight + 5,
-              child: _buildHelpLabel('Sports Book', width: 45),
+              child: _buildHelpLabel('Sportsbook', width: 105),
             ),
-        ],
-      ),
-      floatingActionButton: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
+          // Sign Out button - EDIT POSITION HERE ↓
+          Positioned(
+            top: 470,     // ← Edit this value to move UP/DOWN
+            right: 5,   // ← Edit this value to move LEFT/RIGHT
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: _handleSignOut,
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(50),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.logout, color: Colors.black, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Sign Out',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.logout,
+                    color: Colors.black,
+                    size: 28,
                   ),
                 ),
               ),
             ),
           ),
-        ),
+          // Top stats strip
+          const TopStatsStrip(),
+        ],
       ),
     );
   }

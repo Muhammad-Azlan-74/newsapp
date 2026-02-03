@@ -533,8 +533,8 @@ class MatchData {
       preparationDeadline: json['preparationDeadline'] != null
           ? DateTime.parse(json['preparationDeadline'] as String)
           : null,
-      attackerScore: json['attackerScore'] as int? ?? 0,
-      defenderScore: json['defenderScore'] as int? ?? 0,
+      attackerScore: (json['attackerScore'] as num?)?.toInt() ?? 0,
+      defenderScore: (json['defenderScore'] as num?)?.toInt() ?? 0,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
@@ -608,8 +608,8 @@ class DefenseMatchData {
       preparationDeadline: json['preparationDeadline'] != null
           ? DateTime.parse(json['preparationDeadline'] as String)
           : null,
-      attackerScore: json['attackerScore'] as int? ?? 0,
-      defenderScore: json['defenderScore'] as int? ?? 0,
+      attackerScore: (json['attackerScore'] as num?)?.toInt() ?? 0,
+      defenderScore: (json['defenderScore'] as num?)?.toInt() ?? 0,
       winnerId: json['winnerId'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
@@ -673,8 +673,8 @@ class MatchHistoryItem {
       preparationDeadline: json['preparationDeadline'] != null
           ? DateTime.parse(json['preparationDeadline'] as String)
           : null,
-      attackerScore: json['attackerScore'] as int? ?? 0,
-      defenderScore: json['defenderScore'] as int? ?? 0,
+      attackerScore: (json['attackerScore'] as num?)?.toInt() ?? 0,
+      defenderScore: (json['defenderScore'] as num?)?.toInt() ?? 0,
       winnerId: json['winnerId'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)

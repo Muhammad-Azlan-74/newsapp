@@ -39,6 +39,9 @@ class ApiEndpoints {
   /// Add caption to Hall of Fame picture
   static const String hofCaption = '/api/halloffame/caption';
 
+  /// Make offer on Hall of Fame picture
+  static const String hofOffer = '/api/halloffame/offer';
+
   // News endpoints
   static const String rumors = '/api/news/rumors';
   static const String medicalNews = '/api/news/medical';

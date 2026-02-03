@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/constants/doctors_office_overlay_coordinates.dart';
+import 'package:newsapp/core/services/auth_storage_service.dart';
 import 'package:newsapp/features/marketplace/presentation/widgets/interactive_overlay_area.dart';
 import 'package:newsapp/shared/widgets/medlab_menu_dialog.dart';
 import 'package:newsapp/shared/widgets/team_avatar_widget.dart';
 import 'package:newsapp/shared/widgets/welcome_chat_bubble.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Doctors Office Screen
 ///
@@ -22,10 +24,12 @@ class DoctorsOfficeScreen extends StatefulWidget {
 class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
   bool _showHelpBubble = false;
   bool _showHelpLabels = false;
+  String? _userName;
 
   @override
   void initState() {
     super.initState();
+    _loadUserName();
     // Show welcome message after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
@@ -34,6 +38,15 @@ class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
         });
       }
     });
+  }
+
+  Future<void> _loadUserName() async {
+    final name = await AuthStorageService.getUserName();
+    if (mounted) {
+      setState(() {
+        _userName = name;
+      });
+    }
   }
 
   /// Toggle help labels visibility for 5 seconds
@@ -84,7 +97,7 @@ class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
               text,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 10,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.3,
                 shadows: [
@@ -165,7 +178,9 @@ class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white, // White background
-      body: LayoutBuilder(
+      body: Stack(
+        children: [
+          LayoutBuilder(
         builder: (context, constraints) {
           // Get screen dimensions
           final screenWidth = MediaQuery.of(context).size.width;
@@ -211,7 +226,7 @@ class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
               if (_showHelpBubble)
                 WelcomeChatBubble(
                   isFirstTime: false,
-                  customMessage: 'Want to know about med news?',
+                  customMessage: 'Hey ${_userName ?? 'there'}, check the MRI for all injury news.',
                   onDismissed: () {
                     setState(() {
                       _showHelpBubble = false;
@@ -242,6 +257,11 @@ class _DoctorsOfficeScreenState extends State<DoctorsOfficeScreen> {
           );
         },
       ),
+          // Top stats strip
+          const TopStatsStrip(),
+        ],
+      ),
     );
   }
 }
+

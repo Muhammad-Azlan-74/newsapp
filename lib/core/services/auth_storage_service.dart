@@ -119,4 +119,18 @@ class AuthStorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyFcmToken);
   }
+
+  /// Get user's display name
+  static Future<String?> getUserName() async {
+    final userData = await getUserData();
+    if (userData != null) {
+      // Try various name fields, then fall back to email
+      return userData['fullName'] as String? ??
+          userData['displayName'] as String? ??
+          userData['username'] as String? ??
+          userData['name'] as String? ??
+          userData['email'] as String?;
+    }
+    return null;
+  }
 }

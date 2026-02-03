@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Janitor Screen
 ///
@@ -32,14 +33,11 @@ class JanitorScreen extends StatelessWidget {
             left: 16,
             child: GlassyBackButton(),
           ),
-          // Help button
-          const Positioned(
-            top: 40,
-            right: 16,
-            child: GlassyHelpButton(),
-          ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
   }
 }
+

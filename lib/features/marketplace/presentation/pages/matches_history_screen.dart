@@ -13,7 +13,19 @@ import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 ///
 /// Displays the user's match history with filters for attack/defense
 class MatchesHistoryScreen extends StatefulWidget {
-  const MatchesHistoryScreen({super.key});
+  /// Initial filter to apply (null = all, 'attack', 'defense')
+  final String? initialFilter;
+
+  /// List of allowed filters to show in tabs
+  /// If null, all filters are shown [null, 'attack', 'defense']
+  /// Example: [null, 'attack'] shows only All and Attack tabs
+  final List<String?>? allowedFilters;
+
+  const MatchesHistoryScreen({
+    super.key,
+    this.initialFilter,
+    this.allowedFilters,
+  });
 
   @override
   State<MatchesHistoryScreen> createState() => _MatchesHistoryScreenState();
@@ -31,9 +43,14 @@ class _MatchesHistoryScreenState extends State<MatchesHistoryScreen> {
   // Filter: null = all, 'attack', 'defense'
   String? _selectedFilter;
 
+  // Default allowed filters if not specified
+  late final List<String?> _allowedFilters;
+
   @override
   void initState() {
     super.initState();
+    _selectedFilter = widget.initialFilter;
+    _allowedFilters = widget.allowedFilters ?? [null, 'attack', 'defense'];
     _loadUserAndMatches();
   }
 
@@ -169,9 +186,9 @@ class _MatchesHistoryScreenState extends State<MatchesHistoryScreen> {
       ),
       child: Row(
         children: [
-          _buildFilterTab('All', null),
-          _buildFilterTab('Attack', 'attack'),
-          _buildFilterTab('Defense', 'defense'),
+          if (_allowedFilters.contains(null)) _buildFilterTab('All', null),
+          if (_allowedFilters.contains('attack')) _buildFilterTab('Attack', 'attack'),
+          if (_allowedFilters.contains('defense')) _buildFilterTab('Defense', 'defense'),
         ],
       ),
     );
@@ -620,3 +637,4 @@ class _MatchesHistoryScreenState extends State<MatchesHistoryScreen> {
     }
   }
 }
+

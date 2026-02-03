@@ -18,6 +18,12 @@ import 'package:newsapp/features/marketplace/presentation/pages/defense_lineup_s
 import 'package:newsapp/features/marketplace/presentation/pages/matches_history_screen.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/attack_lineup_screen.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/defense_lineup_selection_screen.dart';
+import 'package:newsapp/features/marketplace/presentation/pages/attack_lineup_view_screen.dart';
+import 'package:newsapp/features/marketplace/presentation/pages/defense_lineup_view_screen.dart';
+import 'package:newsapp/features/marketplace/presentation/pages/match_result_screen.dart';
+import 'package:newsapp/features/marketplace/presentation/pages/attack_users_screen.dart';
+import 'package:newsapp/core/services/match_result_service.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Conference Room Screen
 ///
@@ -34,27 +40,132 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
   bool _showLabels = false;
   final CardRepository _cardRepository = CardRepository(ApiClient());
 
+  @override
+  void initState() {
+    super.initState();
+    // Check for pending match results after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPendingMatchResult();
+    });
+  }
+
+  /// Check if there's a completed match result to show
+  Future<void> _checkPendingMatchResult() async {
+    final pendingResult = await MatchResultService.getPendingResult();
+    if (pendingResult != null && mounted) {
+      // Show the result screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MatchResultScreen(
+            matchId: pendingResult.matchId,
+            opponentName: pendingResult.opponentName,
+            isAttacker: pendingResult.isAttacker,
+          ),
+        ),
+      );
+    }
+  }
+
   /// Labels for each overlay
   static const Map<String, String> _overlayLabels = {
-    'Overlay 1': 'Select Lineup',
-    'Overlay 2': 'Attack',
-    'Overlay 3': 'Defense',
-    'Overlay 4': 'History',
+    'Overlay 4': 'Attack History',
+    'Overlay 5': 'Defense History',
+    'Overlay 6': 'Attack',
+    'Overlay 7': 'Defense',
+    'Overlay 8': 'History',
   };
 
-  /// Show labels for 5 seconds
-  void _showLabelsTemporarily() {
-    setState(() {
-      _showLabels = true;
-    });
-
-    Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) {
-        setState(() {
-          _showLabels = false;
-        });
-      }
-    });
+  /// Show game rules dialog
+  void _showRulesDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          'Game Rules',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Text(
+                          'Parley isn\'t a fight. It\'s a meeting.\n'
+                          'Set your cards, defend your office, and strengthen your team.\n\n'
+                          'Each manager plays 5 cards for attack or defense.\n'
+                          'Cards affect 10 different stats (Power, Route IQ, and more).\n\n'
+                          'Each stat is scored individually.\n'
+                          'Win the stat. Get the point.\n'
+                          'Most points wins the Parley.\n\n'
+                          'Choose your cards wisely and pick your opponent.\n'
+                          'The winner claims one card from the loser.\n\n'
+                          'Three identical player cards merge into the next tier:\n'
+                          'Bronze → Silver → Gold → Legend\n\n'
+                          'Level up to unlock your real-world Legendary trading card set.',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.95),
+                            fontSize: 15,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: const Text('Got it!'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   /// Fetch user cards from API and navigate to cards screen
@@ -518,71 +629,138 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
   List<BuildingOverlay> _buildOverlays() {
     final overlays = ConferenceRoomOverlays.all;
 
-    // Filter out overlay 5
-    final filteredOverlays = overlays.where((o) => o.label != 'Overlay 5').toList();
-
-    return filteredOverlays.map((overlay) {
+    return overlays.map((overlay) {
       final label = overlay.label;
-      final displayLabel = _overlayLabels[label] ?? label ?? '';
+
+      // Make overlays 4, 5, 6, 7 invisible but tappable
+      // Only overlay 8 is visible (semi-transparent)
+      final isInvisible = label == 'Overlay 4' || label == 'Overlay 5' ||
+                          label == 'Overlay 6' || label == 'Overlay 7';
 
       return overlay.copyWith(
         customWidget: GestureDetector(
           onTap: () {
-            if (label == 'Overlay 1') {
-              _showAttackDefenseDialog();
-            } else if (label == 'Overlay 2') {
-              _handleOverlay2Tap();
-            } else if (label == 'Overlay 3') {
+            if (label == 'Overlay 4') {
+              // All and Attack history only
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const DefenseLineupScreen(),
+                  builder: (context) => const MatchesHistoryScreen(
+                    allowedFilters: [null, 'attack'],
+                  ),
                 ),
               );
-            } else if (label == 'Overlay 4') {
+            } else if (label == 'Overlay 5') {
+              // All and Defense history only
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const MatchesHistoryScreen(),
+                  builder: (context) => const MatchesHistoryScreen(
+                    allowedFilters: [null, 'defense'],
+                  ),
                 ),
               );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('$label tapped!')),
+            } else if (label == 'Overlay 6') {
+              // Attack Lineup View
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AttackLineupViewScreen(),
+                ),
+              );
+            } else if (label == 'Overlay 7') {
+              // Defense Lineup View
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DefenseLineupViewScreen(),
+                ),
+              );
+            } else if (label == 'Overlay 8') {
+              // Match History (All matches)
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MatchesHistoryScreen(
+                    allowedFilters: [null, 'attack', 'defense'],
+                  ),
+                ),
               );
             }
           },
-          child: AnimatedOpacity(
-            opacity: _showLabels ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Text(
-                    displayLabel,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
+          child: Container(
+            decoration: isInvisible
+                ? null
+                : BoxDecoration(
+                    color: Colors.blue.withOpacity(0.3), // Semi-transparent
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-              ),
-            ),
+            color: isInvisible ? Colors.transparent : null,
           ),
         ),
       );
     }).toList();
   }
 
+  /// Build a help label widget (same design as mancave labels)
+  Widget _buildHelpLabel(String text) {
+    return AnimatedOpacity(
+      opacity: _showLabels ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 300),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.7),
+                    offset: const Offset(1, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Calculate label positions for visible overlay (only overlay 8)
+    // These should match the values in conference_room_overlay_coordinates.dart
+    final overlay8Left = 0.25 * screenWidth + 5;   // Match overlay8 left
+    final overlay8Top = 0.11 * screenHeight + 5;   // Match overlay8 top
+
     return Scaffold(
       body: Stack(
         children: [
@@ -603,11 +781,21 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
             top: MediaQuery.of(context).padding.top + 10,
             right: 10,
             child: GlassyHelpButton(
-              onPressed: _showLabelsTemporarily,
+              onPressed: _showRulesDialog,
             ),
           ),
+          // Help label for Overlay 8 (History) - only visible overlay
+          if (_showLabels)
+            Positioned(
+              left: overlay8Left,
+              top: overlay8Top,
+              child: _buildHelpLabel('History'),
+            ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
   }
 }
+

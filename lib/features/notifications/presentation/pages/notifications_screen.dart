@@ -6,6 +6,7 @@ import 'package:newsapp/features/notifications/data/repositories/notification_re
 import 'package:newsapp/shared/widgets/background_widget.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/core/constants/app_constants.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Notifications Screen
 ///
@@ -155,53 +156,61 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       opacity: AppConstants.dashboardBackgroundOpacity,
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    const GlassyBackButton(),
-                    const SizedBox(width: 16),
-                    const Text(
-                      'Notifications',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (_pagination != null && _notifications.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${_pagination!.totalCount}',
-                          style: const TextStyle(
+        body: Stack(
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
+                  // Add spacing for the top stats strip
+                  const SizedBox(height: 32),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        const GlassyBackButton(),
+                        const SizedBox(width: 16),
+                        const Text(
+                          'Notifications',
+                          style: TextStyle(
                             color: Colors.white,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
+                        const Spacer(),
+                        if (_pagination != null && _notifications.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${_pagination!.totalCount}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
 
-              // Content
-              Expanded(
-                child: _buildContent(),
+                  // Content
+                  Expanded(
+                    child: _buildContent(),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            // Top stats strip overlay
+            const TopStatsStrip(),
+          ],
         ),
       ),
     );

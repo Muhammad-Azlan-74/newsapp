@@ -14,6 +14,7 @@ import 'package:newsapp/features/user/data/repositories/card_repository.dart';
 import 'package:newsapp/features/user/data/models/card_model.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/user_cards_screen.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/rookie_draft_screen.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Man Cave Screen
 ///
@@ -241,12 +242,111 @@ class _ManCaveScreenState extends State<ManCaveScreen> {
     } else if (label == 'Overlay 2') {
       // Perform rookie draft
       _performRookieDraft();
+    } else if (label == 'Weekly') {
+      // Show weekly.png in a dialog
+      _showWeeklyDialog();
     } else {
       // Default behavior for other overlays
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$label tapped!')),
       );
     }
+  }
+
+  /// Show weekly.png in a dialog
+  void _showWeeklyDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.7),
+      builder: (context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Weekly image
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            AppAssets.weekly,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                padding: const EdgeInsets.all(40),
+                                child: const Center(
+                                  child: Text(
+                                    'Weekly schedule image not found',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      // Close button
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => Navigator.pop(context),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.3),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.5),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   /// Build the list of interactive overlays
@@ -299,7 +399,7 @@ class _ManCaveScreenState extends State<ManCaveScreen> {
               text,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 10,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.3,
                 shadows: [
@@ -326,10 +426,13 @@ class _ManCaveScreenState extends State<ManCaveScreen> {
     // Calculate label positions based on overlay coordinates (positioned at top of overlay)
     // Overlay 1 (All Cards): left: 0.65, top: 0.08, width: 0.2, height: 0.37
     // Overlay 2 (Rookie Draft): left: 0.47, top: 0.5, width: 0.38, height: 0.13
+    // Overlay 3 (Weekly): left: 0.1, top: 0.11, width: 0.3, height: 0.3
     final overlay1Left = 0.65 * screenWidth + 5;
     final overlay1Top = 0.08 * screenHeight + 5;
     final overlay2Left = 0.47 * screenWidth + 5;
     final overlay2Top = 0.5 * screenHeight + 5;
+    final overlay3Left = 0.1 * screenWidth + 5;
+    final overlay3Top = 0.11 * screenHeight + 5;
 
     return Scaffold(
       body: Stack(
@@ -366,8 +469,18 @@ class _ManCaveScreenState extends State<ManCaveScreen> {
               top: overlay2Top,
               child: _buildHelpLabel('Rookie Draft'),
             ),
+          // Help label for Overlay 3 (Weekly)
+          if (_showHelpLabels)
+            Positioned(
+              left: overlay3Left,
+              top: overlay3Top,
+              child: _buildHelpLabel('Weekly'),
+            ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
   }
 }
+

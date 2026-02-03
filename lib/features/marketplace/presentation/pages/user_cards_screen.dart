@@ -4,6 +4,7 @@ import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/features/user/data/models/card_model.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// User Cards Screen
 ///
@@ -56,12 +57,6 @@ class UserCardsScreen extends StatelessWidget {
                     ),
                   ),
                   centerTitle: true,
-                  actions: const [
-                    Padding(
-                      padding: EdgeInsets.only(right: 8.0),
-                      child: GlassyHelpButton(),
-                    ),
-                  ],
                 ),
                 // Body content
                 Expanded(
@@ -94,6 +89,8 @@ class UserCardsScreen extends StatelessWidget {
               ],
             ),
           ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
@@ -638,3 +635,4 @@ class _CardDetailsSheet extends StatelessWidget {
     );
   }
 }
+

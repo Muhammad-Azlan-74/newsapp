@@ -6,10 +6,12 @@ import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/network/api_client.dart';
 import 'package:newsapp/core/network/api_exceptions.dart';
 import 'package:newsapp/core/services/match_storage_service.dart';
+import 'package:newsapp/core/services/match_result_service.dart';
 import 'package:newsapp/features/user/data/models/card_model.dart';
 import 'package:newsapp/features/user/data/repositories/card_repository.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Attack Screen
 ///
@@ -194,12 +196,22 @@ class _AttackScreenState extends State<AttackScreen>
 
       // Save match data locally
       if (response.data != null) {
+        final deadline = response.data!.preparationDeadline ?? DateTime.now().add(const Duration(hours: 60));
+
         await MatchStorageService.saveMatch(
           matchId: response.data!.id,
           defenderName: user.fullName,
           status: response.data!.status,
-          preparationDeadline: response.data!.preparationDeadline ?? DateTime.now().add(const Duration(hours: 60)),
+          preparationDeadline: deadline,
           createdAt: response.data!.createdAt ?? DateTime.now(),
+        );
+
+        // Save pending result for showing when match ends
+        await MatchResultService.savePendingResult(
+          matchId: response.data!.id,
+          opponentName: user.fullName,
+          isAttacker: true,
+          matchEndTime: deadline,
         );
       }
 
@@ -307,6 +319,8 @@ class _AttackScreenState extends State<AttackScreen>
           body: _buildBody(),
         ),
         ),
+        // Top stats strip
+        const TopStatsStrip(),
       ],
     );
   }
@@ -1294,3 +1308,4 @@ class _AttackScreenState extends State<AttackScreen>
     }
   }
 }
+

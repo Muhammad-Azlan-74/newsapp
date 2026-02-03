@@ -17,15 +17,6 @@ class OfficeOverlays {
         label: 'Office 1',
       );
 
-  /// Office Area 2 - Top Center
-  static BuildingOverlay get area2 => const BuildingOverlay(
-        left: 0.42,
-        top: 0.17,
-        width: 0.16,
-        height: 0.20,
-        label: 'Office 2',
-      );
-
   /// Office Area 3 - Top Right
   static BuildingOverlay get area3 => const BuildingOverlay(
     left: 0.60,
@@ -92,7 +83,6 @@ class OfficeOverlays {
   /// Map of overlay names to their circular/rectangular shape
   static const Map<String, bool> shapeMap = {
     'Office 1': false, // Rectangular
-    'Office 2': false, // Rectangular
     'Office 3': false, // Rectangular
     'Office 4': false, // Rectangular
     'Office 5': false, // Rectangular
@@ -105,7 +95,6 @@ class OfficeOverlays {
   /// Map of overlay names to their colors
   static const Map<String, Color> colorMap = {
     'Office 1': Colors.blue,
-    'Office 2': Colors.green,
     'Office 3': Colors.orange,
     'Office 4': Colors.purple,
     'Office 5': Colors.red,
@@ -118,7 +107,6 @@ class OfficeOverlays {
   /// Map of overlay names to their icons
   static const Map<String, IconData> iconMap = {
     'Office 1': Icons.meeting_room,
-    'Office 2': Icons.business_center,
     'Office 3': Icons.chair,
     'Office 4': Icons.desk,
     'Office 5': Icons.people,
@@ -131,7 +119,6 @@ class OfficeOverlays {
   /// Get all overlays as a list
   static List<BuildingOverlay> get all => [
         area1,
-        area2,
         area3,
         area4,
         area5,

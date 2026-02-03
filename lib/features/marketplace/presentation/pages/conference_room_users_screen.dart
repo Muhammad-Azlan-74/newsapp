@@ -7,6 +7,7 @@ import 'package:newsapp/features/user/data/repositories/hof_repository.dart';
 import 'package:newsapp/features/user/data/models/hof_user_model.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Conference Room Users Screen
 ///
@@ -152,6 +153,8 @@ class _ConferenceRoomUsersScreenState extends State<ConferenceRoomUsersScreen> {
             right: 8,
             child: const GlassyHelpButton(),
           ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
@@ -266,6 +269,15 @@ class _ConferenceRoomUsersScreenState extends State<ConferenceRoomUsersScreen> {
                       color: Colors.black,
                     ),
                   ),
+                  subtitle: user.username.isNotEmpty
+                      ? Text(
+                          '@${user.username}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black.withOpacity(0.6),
+                          ),
+                        )
+                      : null,
                   trailing: const Icon(
                     Icons.person,
                     color: Colors.blue,
@@ -283,3 +295,4 @@ class _ConferenceRoomUsersScreenState extends State<ConferenceRoomUsersScreen> {
     );
   }
 }
+

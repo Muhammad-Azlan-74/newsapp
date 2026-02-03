@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:newsapp/core/constants/training_ground_overlay_coordinates.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Training Ground Detail Screen
 ///
@@ -64,7 +65,7 @@ class _CenterHubDetailScreenState extends State<CenterHubDetailScreen> {
               text,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 10,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.3,
                 shadows: [
@@ -190,7 +191,9 @@ class _CenterHubDetailScreenState extends State<CenterHubDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: LayoutBuilder(
+      body: Stack(
+        children: [
+          LayoutBuilder(
         builder: (context, constraints) {
           // Get screen dimensions
           final screenWidth = MediaQuery.of(context).size.width;
@@ -260,6 +263,11 @@ class _CenterHubDetailScreenState extends State<CenterHubDetailScreen> {
           );
         },
       ),
+          // Top stats strip
+          const TopStatsStrip(),
+        ],
+      ),
     );
   }
 }
+

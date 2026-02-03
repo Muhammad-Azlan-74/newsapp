@@ -9,6 +9,7 @@ import 'package:newsapp/features/user/data/models/card_model.dart';
 import 'package:newsapp/features/user/data/repositories/card_repository.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Defense Lineup Screen
 ///
@@ -158,6 +159,8 @@ class _DefenseLineupScreenState extends State<DefenseLineupScreen>
             body: _buildBody(),
           ),
         ),
+        // Top stats strip
+        const TopStatsStrip(),
       ],
     );
   }
@@ -1291,3 +1294,4 @@ class _DefenseLineupScreenState extends State<DefenseLineupScreen>
     }
   }
 }
+

@@ -4,16 +4,19 @@
 class HofUser {
   final String id;
   final String fullName;
+  final String username;
 
   const HofUser({
     required this.id,
     required this.fullName,
+    required this.username,
   });
 
   factory HofUser.fromJson(Map<String, dynamic> json) {
     return HofUser(
       id: json['_id'] as String,
       fullName: json['fullName'] as String,
+      username: json['username'] as String? ?? '',
     );
   }
 
@@ -21,6 +24,7 @@ class HofUser {
     return {
       '_id': id,
       'fullName': fullName,
+      'username': username,
     };
   }
 }

@@ -144,8 +144,8 @@ class CardRepository {
       // Save drafted cards to local storage
       await CardStorageService.addCards(draftResponse.data);
 
-      // Save the draft time
-      await CardStorageService.saveLastRookieDraftTime(DateTime.now());
+      // Note: Draft time is now saved when cards are actually revealed in RookieDraftScreen
+      // This prevents cooldown from starting if user leaves without viewing cards
 
       return draftResponse;
     } on DioException catch (e) {

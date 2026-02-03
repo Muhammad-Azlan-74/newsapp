@@ -6,6 +6,7 @@ import 'package:newsapp/features/user/data/repositories/rumor_repository.dart';
 import 'package:newsapp/features/user/data/models/rumor_model.dart';
 import 'package:newsapp/core/services/auth_storage_service.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Rumour Garage Screen
 ///
@@ -93,8 +94,8 @@ class _RumourGarageScreenState extends State<RumourGarageScreen> {
             left: 20,
             bottom: 40,
             child: Container(
-              width: 210,
-              height: 210,
+              width: 140,
+              height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: [
@@ -108,18 +109,18 @@ class _RumourGarageScreenState extends State<RumourGarageScreen> {
               child: ClipOval(
                 child: Image.asset(
                   AppAssets.shaddy,
-                  width: 210,
-                  height: 210,
+                  width: 140,
+                  height: 140,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      width: 210,
-                      height: 210,
+                      width: 140,
+                      height: 140,
                       color: Colors.grey[800],
                       child: const Icon(
                         Icons.person,
                         color: Colors.white70,
-                        size: 105,
+                        size: 70,
                       ),
                     );
                   },
@@ -137,6 +138,8 @@ class _RumourGarageScreenState extends State<RumourGarageScreen> {
             left: 10,
             child: const GlassyBackButton(),
           ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
@@ -187,10 +190,10 @@ class _RumourGarageScreenState extends State<RumourGarageScreen> {
             ),
             // Rumor content overlaid on the right half of image
             Positioned(
-              top: imageHeight * 0.15,
-              bottom: imageHeight * 0.15,
-              left: imageWidth * 0.5,
-              right: imageWidth * 0.05,
+              top: imageHeight * 0.28,
+              bottom: imageHeight * 0.25,
+              left: imageWidth * 0.45,
+              right: imageWidth * 0.01,
               child: _buildRumorContent(),
             ),
           ],
@@ -402,19 +405,24 @@ class _RumourGarageScreenState extends State<RumourGarageScreen> {
 
   /// Build rumor text content to overlay on the secret image
   Widget _buildRumorText(Rumor rumor) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Align(
+        alignment: Alignment.topLeft,
         child: Text(
           rumor.title,
           style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
-            fontSize: 20,
+            fontSize: 16,
+            height: 1.3,
           ),
-          textAlign: TextAlign.center,
+          textAlign: TextAlign.left,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 100,
         ),
       ),
     );
   }
 }
+

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:newsapp/app/theme/app_colors.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// News Stall Detail Screen
 ///
@@ -15,34 +16,41 @@ class BottomRightActionDetailScreen extends StatelessWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.touch_app,
-              size: 64,
-              color: Colors.pink.withOpacity(0.5),
+      body: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.touch_app,
+                  size: 64,
+                  color: Colors.pink.withOpacity(0.5),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Content Coming Soon',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This area will contain news content',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Content Coming Soon',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'This area will contain news content',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
+          ),
+          // Top stats strip
+          const TopStatsStrip(),
+        ],
       ),
     );
   }
 }
+

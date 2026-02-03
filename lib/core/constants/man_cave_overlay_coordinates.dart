@@ -26,28 +26,41 @@ class ManCaveOverlays {
         label: 'Overlay 2',
       );
 
+  /// Overlay 3 - Weekly Schedule (edit coordinates as needed)
+  static BuildingOverlay get overlay3 => const BuildingOverlay(
+        left: 0.1,
+        top: 0.11,
+        width: 0.3,
+        height: 0.3,
+        label: 'Weekly',
+      );
+
   /// Map of overlay names to their circular/rectangular shape
   static const Map<String, bool> shapeMap = {
     'Overlay 1': false, // Rectangular - change to true for circular
     'Overlay 2': false, // Rectangular - change to true for circular
+    'Weekly': false, // Rectangular
   };
 
   /// Map of overlay names to their colors
   static const Map<String, Color> colorMap = {
     'Overlay 1': Colors.green,
     'Overlay 2': Colors.green,
+    'Weekly': Colors.blue,
   };
 
   /// Map of overlay names to their icons
   static const Map<String, IconData> iconMap = {
     'Overlay 1': Icons.location_on,
     'Overlay 2': Icons.location_on,
+    'Weekly': Icons.calendar_today,
   };
 
   /// Get all overlays as a list
   static List<BuildingOverlay> get all => [
         overlay1,
         overlay2,
+        overlay3,
       ];
 
   /// Check if an overlay should be circular

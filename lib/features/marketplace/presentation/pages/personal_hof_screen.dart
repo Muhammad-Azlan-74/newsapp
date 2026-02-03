@@ -10,6 +10,7 @@ import 'package:newsapp/features/user/data/models/hall_of_fame_model.dart';
 import 'package:newsapp/core/services/auth_storage_service.dart';
 import 'package:newsapp/core/utils/jwt_decoder.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Personal HOF Screen
 ///
@@ -85,11 +86,129 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
     }
   }
 
-  Future<void> _uploadPicture() async {
+  /// Show image source selection dialog
+  Future<void> _showImageSourceDialog() async {
+    final ImageSource? source = await showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Choose Image Source',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Camera option
+                    InkWell(
+                      onTap: () => Navigator.pop(context, ImageSource.camera),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.blue.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.camera_alt, color: Colors.blue.shade700, size: 28),
+                            const SizedBox(width: 16),
+                            const Text(
+                              'Take a Photo',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Gallery option
+                    InkWell(
+                      onTap: () => Navigator.pop(context, ImageSource.gallery),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.green.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.photo_library, color: Colors.green.shade700, size: 28),
+                            const SizedBox(width: 16),
+                            const Text(
+                              'Choose from Gallery',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Cancel button
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (source != null) {
+      _uploadPicture(source);
+    }
+  }
+
+  Future<void> _uploadPicture(ImageSource source) async {
     try {
-      // Pick image from gallery
+      // Pick image from selected source
       final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 1800,
         maxHeight: 1800,
         imageQuality: 85,
@@ -97,6 +216,19 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
 
       if (image == null) {
         return; // User cancelled the picker
+      }
+
+      // NOW ask if the picture is for sale (BEFORE uploading)
+      final isForSale = await _askIfForSale();
+      double? saleAmount;
+      
+      if (isForSale == true) {
+        // Ask for the sale amount
+        saleAmount = await _askForSaleAmount();
+        
+        if (saleAmount == null) {
+          return; // User cancelled amount input
+        }
       }
 
       // Set uploading state
@@ -109,15 +241,23 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
         CustomSnackbar.show(context, 'Uploading picture...');
       }
 
-      // Upload the image to backend
-      final response = await _hofRepository.uploadPicture(image.path);
+      // Upload the image to backend with sale information
+      final response = await _hofRepository.uploadPicture(
+        image.path,
+        isForSale: isForSale ?? false,
+        saleAmount: saleAmount,
+      );
 
       // Hide loading snackbar and show success
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
 
         // Show success message
-        CustomSnackbar.show(context, 'Picture uploaded successfully!');
+        if (isForSale == true) {
+          CustomSnackbar.show(context, 'Picture uploaded and listed for sale!');
+        } else {
+          CustomSnackbar.show(context, 'Picture uploaded successfully!');
+        }
 
         // Reload the Hall of Fame to show the new image
         await _loadHallOfFame();
@@ -145,6 +285,228 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
         });
       }
     }
+  }
+
+  /// Ask if the picture is for sale
+  Future<bool?> _askIfForSale() async {
+    return await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.sell,
+                        size: 48,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Is this picture for sale?',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'No',
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade700,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Yes',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Ask for the sale amount in dollars
+  Future<double?> _askForSaleAmount() async {
+    final TextEditingController amountController = TextEditingController();
+
+    return await showDialog<double>(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Sale Amount',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Enter the sale amount in dollars',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: amountController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          labelText: 'Amount',
+                          hintText: 'Enter amount',
+                          prefixText: '\$ ',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.8),
+                        ),
+                        autofocus: true,
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: () {
+                              final amount = double.tryParse(amountController.text);
+                              if (amount == null || amount <= 0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter a valid amount'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+                              Navigator.pop(context, amount);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Save',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _onThumbnailTap(int index) {
@@ -292,64 +654,6 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
       children: [
         SizedBox(height: MediaQuery.of(context).padding.top + 60),
 
-        // Horizontal thumbnail list at top
-        SizedBox(
-          height: 70,
-          child: ListView.builder(
-            controller: _thumbnailScrollController,
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _hallOfFame!.images.length,
-            itemBuilder: (context, index) {
-              final image = _hallOfFame!.images[index];
-              final isSelected = index == _selectedIndex;
-
-              return GestureDetector(
-                onTap: () => _onThumbnailTap(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isSelected ? Colors.black : Colors.white.withOpacity(0.5),
-                      width: isSelected ? 3 : 1.5,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: CachedNetworkImage(
-                      imageUrl: image.url,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey.withOpacity(0.3),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey.withOpacity(0.3),
-                        child: const Icon(Icons.error, size: 20),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
         // Large centered image
         Expanded(
           child: Padding(
@@ -358,22 +662,71 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
               children: [
                 // Large image
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: CachedNetworkImage(
-                      imageUrl: selectedImage.url,
-                      fit: BoxFit.contain,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey.withOpacity(0.3),
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.black),
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: CachedNetworkImage(
+                        imageUrl: selectedImage.url,
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey.withOpacity(0.3),
+                          child: const Center(
+                            child: CircularProgressIndicator(color: Colors.black),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey.withOpacity(0.3),
+                          child: const Center(
+                            child: Icon(Icons.error_outline, color: Colors.red, size: 48),
+                          ),
                         ),
                       ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey.withOpacity(0.3),
-                        child: const Center(
-                          child: Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Sale status label
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selectedImage.isForSale
+                            ? Colors.green.withOpacity(0.25)
+                            : Colors.red.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: selectedImage.isForSale
+                              ? Colors.green.withOpacity(0.5)
+                              : Colors.red.withOpacity(0.5),
+                          width: 1.5,
                         ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            selectedImage.isForSale ? Icons.attach_money : Icons.block,
+                            color: selectedImage.isForSale ? Colors.green.shade800 : Colors.red.shade800,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            selectedImage.isForSale
+                                ? 'For Sale: \$${selectedImage.saleAmount?.toStringAsFixed(0) ?? "0"}'
+                                : 'Not For Sale',
+                            style: TextStyle(
+                              color: selectedImage.isForSale ? Colors.green.shade900 : Colors.red.shade900,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -462,11 +815,69 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
                   ],
                 ),
 
-                SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
+                const SizedBox(height: 12),
               ],
             ),
           ),
         ),
+
+        // Horizontal thumbnail list at bottom
+        SizedBox(
+          height: 70,
+          child: ListView.builder(
+            controller: _thumbnailScrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _hallOfFame!.images.length,
+            itemBuilder: (context, index) {
+              final image = _hallOfFame!.images[index];
+              final isSelected = index == _selectedIndex;
+
+              return GestureDetector(
+                onTap: () => _onThumbnailTap(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? Colors.blue : Colors.white.withOpacity(0.5),
+                      width: isSelected ? 3 : 1.5,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: CachedNetworkImage(
+                      imageUrl: image.url,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey.withOpacity(0.3),
+                        child: const Icon(Icons.error, size: 20),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
       ],
     );
   }
@@ -541,15 +952,18 @@ class _PersonalHofScreenState extends State<PersonalHofScreen> {
             bottom: MediaQuery.of(context).padding.bottom + 16,
             right: 16,
             child: GlassyButton(
-              onPressed: _isUploading ? () {} : _uploadPicture,
+              onPressed: _isUploading ? () {} : _showImageSourceDialog,
               text: 'Upload Picture',
               icon: Icons.upload,
               isFullWidth: false,
               isLoading: _isUploading,
             ),
           ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
   }
 }
+

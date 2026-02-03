@@ -7,6 +7,7 @@ import 'package:newsapp/features/marketplace/presentation/widgets/interactive_ov
 import 'package:newsapp/app/routes.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Office Building Detail Screen
 ///
@@ -23,6 +24,7 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   bool _showShaddyAvatar = true;
+  bool _showHelpLabels = false;
 
   @override
   void initState() {
@@ -61,28 +63,71 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
     super.dispose();
   }
 
-  /// Get room name for display on door plates
-  String _getRoomName(String? label) {
-    switch (label) {
-      case 'Office 1':
-        return 'Conference Room';
-      case 'Office 3':
-        return 'Man Cave';
-      case 'Office 4':
-        return 'Personal Office';
-      case 'Office 5':
-        return 'Doctor\'s Office';
-      case 'Office 6':
-        return 'Janitor';
-      case 'Office 7':
-        return 'Studio TV';
-      case 'Office 8':
-        return 'Exit';
-      case 'Office 9':
-        return 'HR Office';
-      default:
-        return 'Office';
-    }
+  /// Toggle help labels visibility for 5 seconds
+  void _toggleHelpLabels() {
+    if (_showHelpLabels) return; // Already showing
+
+    setState(() {
+      _showHelpLabels = true;
+    });
+
+    // Hide after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showHelpLabels = false;
+        });
+      }
+    });
+  }
+
+  /// Build a help label widget
+  Widget _buildHelpLabel(String text) {
+    return AnimatedOpacity(
+      opacity: _showHelpLabels ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 300),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.7),
+                    offset: const Offset(1, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /// Build the list of interactive overlays
@@ -91,7 +136,6 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
 
     return overlays.map((overlay) {
       final label = overlay.label;
-      final roomName = _getRoomName(label);
 
       // Convert normalized coordinates to actual pixel positions
       final left = overlay.left * imageWidth;
@@ -137,55 +181,8 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
         height: height,
         child: GestureDetector(
           onTap: onTapAction,
-          child: Stack(
-            children: [
-              // Transparent clickable area
-              Container(
-                color: Colors.transparent,
-              ),
-              // Small elegant door plate at the top with transparency
-              Positioned(
-                top: 5,
-                left: width * 0.15,
-                right: width * 0.15,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.4),
-                          width: 0.5,
-                        ),
-                      ),
-                      child: Text(
-                        roomName,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: width * 0.035,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.3,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.5),
-                              offset: const Offset(1, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          child: Container(
+            color: Colors.transparent,
           ),
         ),
       );
@@ -196,7 +193,9 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white, // White background
-      body: SingleChildScrollView(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
         child: LayoutBuilder(
           builder: (context, constraints) {
             // Get screen width
@@ -251,8 +250,65 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 10,
                   right: 10,
-                  child: const GlassyHelpButton(),
+                  child: GlassyHelpButton(onPressed: _toggleHelpLabels),
                 ),
+                // Help labels for each office
+                // Conference Room (Office 1) - top: 0.17
+                if (_showHelpLabels)
+                  Positioned(
+                    left: 0.01 * screenWidth + 10,
+                    top: 0.17 * (screenWidth * 1.5) + 10,
+                    child: _buildHelpLabel('Conference Room'),
+                  ),
+                // Man Cave (Office 3) - left: 0.60, top: 0.87
+                if (_showHelpLabels)
+                  Positioned(
+                    left: 0.60 * screenWidth + 10,
+                    top: 0.87 * (screenWidth * 1.5) + 10,
+                    child: _buildHelpLabel('Man Cave'),
+                  ),
+                // Personal Office (Office 4) - left: 0.001, top: 0.43
+                if (_showHelpLabels)
+                  Positioned(
+                    left: 0.001 * screenWidth + 10,
+                    top: 0.43 * (screenWidth * 1.5) + 10,
+                    child: _buildHelpLabel('Personal Office'),
+                  ),
+                // Doctor's Office (Office 5) - left: 0.001, top: 0.87
+                if (_showHelpLabels)
+                  Positioned(
+                    left: 0.001 * screenWidth + 10,
+                    top: 0.87 * (screenWidth * 1.5) + 10,
+                    child: _buildHelpLabel("Doctor's Office"),
+                  ),
+                // Janitor (Office 6) - left: 0.60, top: 0.43
+                if (_showHelpLabels)
+                  Positioned(
+                    left: 0.60 * screenWidth + 10,
+                    top: 0.43 * (screenWidth * 1.5) + 10,
+                    child: _buildHelpLabel('Janitor'),
+                  ),
+                // Studio TV (Office 7) - left: 0.001, top: 0.65
+                if (_showHelpLabels)
+                  Positioned(
+                    left: 0.001 * screenWidth + 10,
+                    top: 0.65 * (screenWidth * 1.5) + 10,
+                    child: _buildHelpLabel('Studio TV'),
+                  ),
+                // Exit (Office 8) - left: 0.6, top: 1.09
+                if (_showHelpLabels)
+                  Positioned(
+                    left: 0.6 * screenWidth + 10,
+                    top: 1.09 * (screenWidth * 1.5) + 10,
+                    child: _buildHelpLabel('Exit'),
+                  ),
+                // HR Office (Office 9) - left: 0.60, top: 0.65
+                if (_showHelpLabels)
+                  Positioned(
+                    left: 0.60 * screenWidth + 10,
+                    top: 0.65 * (screenWidth * 1.5) + 10,
+                    child: _buildHelpLabel('HR Office'),
+                  ),
                 // Shaddy avatar with chat bubble
                 if (_showShaddyAvatar)
                   Positioned(
@@ -292,16 +348,10 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: const [
-                                          Icon(
-                                            Icons.question_mark_rounded,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          SizedBox(width: 8),
                                           Text(
                                             'Wanna know something shaddy',
                                             style: TextStyle(
-                                              color: Colors.white,
+                                              color: Colors.black,
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
                                               letterSpacing: 0.5,
@@ -368,6 +418,10 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
             );
           },
         ),
+      ),
+          // Top stats strip
+          const TopStatsStrip(),
+        ],
       ),
     );
   }

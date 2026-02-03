@@ -5,6 +5,7 @@ import 'package:newsapp/features/user/data/repositories/hof_repository.dart';
 import 'package:newsapp/features/user/data/models/hof_user_model.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/friend_hof_screen.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// HOF Friends Screen
 ///
@@ -120,6 +121,8 @@ class _HofFriendsScreenState extends State<HofFriendsScreen> {
               ),
             ),
           ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
@@ -234,6 +237,15 @@ class _HofFriendsScreenState extends State<HofFriendsScreen> {
                       color: Colors.black,
                     ),
                   ),
+                  subtitle: user.username.isNotEmpty
+                      ? Text(
+                          '@${user.username}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black.withOpacity(0.6),
+                          ),
+                        )
+                      : null,
                   trailing: const Icon(
                     Icons.emoji_events,
                     color: Colors.amber,
@@ -259,3 +271,4 @@ class _HofFriendsScreenState extends State<HofFriendsScreen> {
     );
   }
 }
+

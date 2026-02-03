@@ -10,6 +10,7 @@ import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 import 'package:newsapp/shared/widgets/notification_item_widget.dart';
 import 'package:newsapp/core/services/socket_service.dart';
 import 'package:newsapp/core/services/auth_storage_service.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// News Stand Screen (Notifications Screen)
 ///
@@ -295,6 +296,8 @@ class _NewsStandScreenState extends State<NewsStandScreen> {
             right: 20,
             child: _buildNewspaperLogo(),
           ),
+          // Top stats strip
+          const TopStatsStrip(),
         ],
       ),
     );
@@ -374,8 +377,6 @@ class _NewsStandScreenState extends State<NewsStandScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          const GlassyHelpButton(),
         ],
       ),
     );
@@ -499,3 +500,4 @@ class _NewsStandScreenState extends State<NewsStandScreen> {
     );
   }
 }
+

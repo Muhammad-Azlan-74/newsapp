@@ -53,12 +53,16 @@ class HofImage {
   final String url;
   final String? caption;
   final String? createdAt;
+  final bool isForSale;
+  final double? saleAmount;
 
   HofImage({
     required this.id,
     required this.url,
     this.caption,
     this.createdAt,
+    this.isForSale = false,
+    this.saleAmount,
   });
 
   factory HofImage.fromJson(Map<String, dynamic> json) {
@@ -67,6 +71,8 @@ class HofImage {
       url: json['url'] ?? '',
       caption: json['caption'],
       createdAt: json['createdAt'],
+      isForSale: json['isForSale'] ?? false,
+      saleAmount: json['saleAmount']?.toDouble(),
     );
   }
 
@@ -76,6 +82,8 @@ class HofImage {
       'url': url,
       'caption': caption,
       'createdAt': createdAt,
+      'isForSale': isForSale,
+      'saleAmount': saleAmount,
     };
   }
 }
@@ -147,6 +155,25 @@ class LikeResponse {
     return {
       'message': message,
       'likes': likes,
+    };
+  }
+}
+
+/// Make Offer Response
+class MakeOfferResponse {
+  final String message;
+
+  MakeOfferResponse({required this.message});
+
+  factory MakeOfferResponse.fromJson(Map<String, dynamic> json) {
+    return MakeOfferResponse(
+      message: json['message'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'message': message,
     };
   }
 }

@@ -10,6 +10,7 @@ import 'package:newsapp/shared/widgets/status_dialog.dart';
 import 'package:newsapp/shared/widgets/fantasy_dialog.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Personal Office Screen
 ///
@@ -72,7 +73,7 @@ class _PersonalOfficeScreenState extends State<PersonalOfficeScreen> {
               text,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 10,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.3,
                 shadows: [
@@ -215,58 +216,65 @@ class _PersonalOfficeScreenState extends State<PersonalOfficeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white, // White background
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // Get screen dimensions
-          final screenWidth = MediaQuery.of(context).size.width;
-          final screenHeight = MediaQuery.of(context).size.height;
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Get screen dimensions
+              final screenWidth = MediaQuery.of(context).size.width;
+              final screenHeight = MediaQuery.of(context).size.height;
 
-          return Stack(
-            children: [
-              // Background image with BoxFit.cover
-              Positioned.fill(
-                child: Image.asset(
-                  AppAssets.personalOffice,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.centerLeft,
-                  gaplessPlayback: true,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.white,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.error, size: 64, color: Colors.red),
-                            const SizedBox(height: 16),
-                            Text('Error loading image: $error'),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              // Overlays positioned on the screen
-              ..._buildOverlays(context, screenWidth, screenHeight),
-              // Help labels for all areas
-              ..._buildHelpLabels(screenWidth, screenHeight),
-              // Back button
-              const Positioned(
-                top: 40,
-                left: 16,
-                child: GlassyBackButton(),
-              ),
-              // Help button
-              Positioned(
-                top: 40,
-                right: 16,
-                child: GlassyHelpButton(onPressed: _toggleHelpLabels),
-              ),
-            ],
-          );
-        },
+              return Stack(
+                children: [
+                  // Background image with BoxFit.cover
+                  Positioned.fill(
+                    child: Image.asset(
+                      AppAssets.personalOffice,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.centerLeft,
+                      gaplessPlayback: true,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.white,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.error, size: 64, color: Colors.red),
+                                const SizedBox(height: 16),
+                                Text('Error loading image: $error'),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  // Overlays positioned on the screen
+                  ..._buildOverlays(context, screenWidth, screenHeight),
+                  // Help labels for all areas
+                  ..._buildHelpLabels(screenWidth, screenHeight),
+                  // Back button
+                  const Positioned(
+                    top: 40,
+                    left: 16,
+                    child: GlassyBackButton(),
+                  ),
+                  // Help button
+                  Positioned(
+                    top: 40,
+                    right: 16,
+                    child: GlassyHelpButton(onPressed: _toggleHelpLabels),
+                  ),
+                ],
+              );
+            },
+          ),
+          // Top stats strip
+          const TopStatsStrip(),
+        ],
       ),
     );
   }
 }
+

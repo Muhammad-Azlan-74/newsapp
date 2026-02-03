@@ -7,6 +7,7 @@ import 'package:newsapp/features/user/data/repositories/card_repository.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 import 'package:newsapp/shared/widgets/flippable_game_card.dart';
+import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
 /// Defense Lineup Selection Screen
 ///
@@ -285,6 +286,8 @@ class _DefenseLineupSelectionScreenState extends State<DefenseLineupSelectionScr
           ),
           body: _buildBody(),
         ),
+        // Top stats strip
+        const TopStatsStrip(),
       ],
     );
   }
@@ -661,3 +664,4 @@ class _DefenseLineupSelectionScreenState extends State<DefenseLineupSelectionScr
     );
   }
 }
+
