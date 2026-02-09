@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:newsapp/core/constants/app_assets.dart';
@@ -7,6 +8,7 @@ import 'package:newsapp/core/network/api_exceptions.dart';
 import 'package:newsapp/core/services/match_result_service.dart';
 import 'package:newsapp/features/user/data/models/card_model.dart';
 import 'package:newsapp/features/user/data/repositories/card_repository.dart';
+import 'package:newsapp/shared/widgets/flippable_game_card.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 
@@ -45,18 +47,18 @@ class _DefenseLineupViewScreenState extends State<DefenseLineupViewScreen> {
   // Current filter
   String? _currentFilter; // null = all, or QB, RB, WR, TE, K, DEF, SYNERGY
 
-  // All 10 stat names
+  // All 10 stat names (must match API response)
   static const List<String> _allStatNames = [
+    'Accuracy',
+    'IQ',
+    'Clutch',
     'Speed',
     'Agility',
-    'Acceleration',
-    'Strength',
-    'Awareness',
-    'Catching',
-    'Throwing',
-    'Carrying',
-    'Tackling',
+    'Power',
+    'Hands',
+    'Route',
     'Blocking',
+    'Tackling',
   ];
 
   // Filter options
@@ -416,6 +418,79 @@ class _DefenseLineupViewScreenState extends State<DefenseLineupViewScreen> {
     if (canPop && mounted) {
       Navigator.pop(context);
     }
+  }
+
+  void _showStatsInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.white, size: 28),
+                      SizedBox(width: 12),
+                      Text(
+                        'Card Stats Info',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Each card has 10 stats that determine the outcome of a Parley:\n\n'
+                    'Accuracy • IQ • Clutch • Speed • Agility\n'
+                    'Power • Hands • Route • Blocking • Tackling\n\n'
+                    'Select 4 player cards + 1 synergy card.\n'
+                    'Each stat is compared individually.\n'
+                    'Win the stat, get the point.\n'
+                    'Most points wins the Parley.',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.95),
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      ),
+                      child: const Text('Got it!'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -794,7 +869,7 @@ class _DefenseLineupViewScreenState extends State<DefenseLineupViewScreen> {
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
+        crossAxisCount: 3,
         childAspectRatio: 0.65,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
@@ -853,6 +928,29 @@ class _DefenseLineupViewScreenState extends State<DefenseLineupViewScreen> {
                     )
                   : _buildCardPlaceholder(card),
             ),
+            // Info button (top right) - shows large card overlay
+            if (!isSelected)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: () => showLargeCardOverlay(context, card),
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+                    ),
+                    child: const Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ),
             // Selection checkmark
             if (isSelected)
               Positioned(
@@ -935,8 +1033,9 @@ class _DefenseLineupViewScreenState extends State<DefenseLineupViewScreen> {
   }
 
   Widget _buildSelectionSlots() {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      padding: EdgeInsets.fromLTRB(12, 12, 12, 12 + bottomPadding),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.5),
         border: Border(

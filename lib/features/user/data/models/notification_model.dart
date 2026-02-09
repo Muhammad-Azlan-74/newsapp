@@ -76,4 +76,20 @@ class NotificationModel {
   String? get teamId => data?['teamId'];
   String? get hofUserId => data?['hofUserId'];
   String? get likerId => data?['likerId'];
+
+  // HOF_OFFER_RECEIVED fields
+  String? get offerId => data?['offerId'];
+  num? get offerAmount => data?['amount'];
+  Map<String, dynamic>? get offerMaker => data?['offerMaker'] as Map<String, dynamic>?;
+  String? get offerMakerName => offerMaker?['fullName'];
+  Map<String, dynamic>? get offerImage => data?['image'] as Map<String, dynamic>?;
+
+  // MATCH_COMPLETED fields
+  String? get matchId => data?['matchId'];
+  String? get matchResult => data?['result'];
+  num? get yourScore => data?['yourScore'];
+  num? get opponentScore => data?['opponentScore'];
+  bool? get isAttacker => data?['isAttacker'];
+  Map<String, dynamic>? get opponent => data?['opponent'] as Map<String, dynamic>?;
+  String? get opponentName => opponent?['fullName'];
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'dart:async';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/constants/app_constants.dart';
 import 'package:newsapp/core/network/api_client.dart';
@@ -21,7 +22,7 @@ import 'package:newsapp/features/marketplace/presentation/pages/defense_lineup_s
 import 'package:newsapp/features/marketplace/presentation/pages/attack_lineup_view_screen.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/defense_lineup_view_screen.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/match_result_screen.dart';
-import 'package:newsapp/features/marketplace/presentation/pages/attack_users_screen.dart';
+import 'package:newsapp/features/marketplace/presentation/pages/conference_room_users_screen.dart';
 import 'package:newsapp/core/services/match_result_service.dart';
 import 'package:newsapp/shared/widgets/top_stats_strip.dart';
 
@@ -40,6 +41,9 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
   bool _showLabels = false;
   final CardRepository _cardRepository = CardRepository(ApiClient());
 
+  /// Timer for auto-hiding labels
+  Timer? _labelTimer;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +51,37 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkPendingMatchResult();
     });
+  }
+
+  @override
+  void dispose() {
+    _labelTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Show labels for all overlays for 5 seconds
+  void _showLabelsTemporarily() {
+    // Cancel any existing timer
+    _labelTimer?.cancel();
+
+    // Show labels
+    setState(() {
+      _showLabels = true;
+    });
+
+    // Hide after 5 seconds
+    _labelTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showLabels = false;
+        });
+      }
+    });
+  }
+
+  /// Handle question icon tap - show labels only
+  void _onQuestionTap() {
+    _showLabelsTemporarily();
   }
 
   /// Check if there's a completed match result to show
@@ -71,9 +106,9 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
   static const Map<String, String> _overlayLabels = {
     'Overlay 4': 'Attack History',
     'Overlay 5': 'Defense History',
-    'Overlay 6': 'Attack',
-    'Overlay 7': 'Defense',
-    'Overlay 8': 'History',
+    'Overlay 6': 'Attack Lineup',
+    'Overlay 7': 'Defense Lineup',
+    'Overlay 8': 'Choose Opponent',
   };
 
   /// Show game rules dialog
@@ -632,10 +667,8 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
     return overlays.map((overlay) {
       final label = overlay.label;
 
-      // Make overlays 4, 5, 6, 7 invisible but tappable
-      // Only overlay 8 is visible (semi-transparent)
-      final isInvisible = label == 'Overlay 4' || label == 'Overlay 5' ||
-                          label == 'Overlay 6' || label == 'Overlay 7';
+      // Make all overlays invisible but tappable
+      final isInvisible = true;
 
       return overlay.copyWith(
         customWidget: GestureDetector(
@@ -677,13 +710,12 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
                 ),
               );
             } else if (label == 'Overlay 8') {
-              // Match History (All matches)
+              // Attack Users Screen (formerly Match History)
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const MatchesHistoryScreen(
-                    allowedFilters: [null, 'attack', 'defense'],
-                  ),
+                  // Use ConferenceRoomUsersScreen which will now list attackable users
+                  builder: (context) => const ConferenceRoomUsersScreen(),
                 ),
               );
             }
@@ -756,10 +788,18 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Calculate label positions for visible overlay (only overlay 8)
+    // Calculate label positions for all overlays
     // These should match the values in conference_room_overlay_coordinates.dart
-    final overlay8Left = 0.25 * screenWidth + 5;   // Match overlay8 left
-    final overlay8Top = 0.11 * screenHeight + 5;   // Match overlay8 top
+    final overlay4Left = 0.12 * screenWidth;
+    final overlay4Top = 0.15 * screenHeight;
+    final overlay5Left = 0.75 * screenWidth;
+    final overlay5Top = 0.15 * screenHeight;
+    final overlay6Left = 0.05 * screenWidth;
+    final overlay6Top = 0.48 * screenHeight;
+    final overlay7Left = 0.5 * screenWidth;
+    final overlay7Top = 0.48 * screenHeight;
+    final overlay8Left = 0.25 * screenWidth;
+    final overlay8Top = 0.11 * screenHeight;
 
     return Scaffold(
       body: Stack(
@@ -776,21 +816,58 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
             left: 10,
             child: const GlassyBackButton(),
           ),
-          // Help button
+          // Info icon - shows labels for 5 seconds
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
             right: 10,
             child: GlassyHelpButton(
+              icon: Icons.info_outline,
+              iconColor: _showLabels ? Colors.amber : Colors.black,
+              onPressed: _onQuestionTap,
+            ),
+          ),
+          // Eye icon - shows rules
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 60,
+            right: 10,
+            child: GlassyHelpButton(
+              icon: Icons.visibility,
               onPressed: _showRulesDialog,
             ),
           ),
-          // Help label for Overlay 8 (History) - only visible overlay
-          if (_showLabels)
+          // Labels for all overlays (shown for 5 seconds when help is tapped)
+          if (_showLabels) ...[
+            // Overlay 4 - Attack History
+            Positioned(
+              left: overlay4Left,
+              top: overlay4Top,
+              child: _buildHelpLabel('Attack\nHistory'),
+            ),
+            // Overlay 5 - Defense History
+            Positioned(
+              left: overlay5Left,
+              top: overlay5Top,
+              child: _buildHelpLabel('Defense\nHistory'),
+            ),
+            // Overlay 6 - Attack Lineup
+            Positioned(
+              left: overlay6Left,
+              top: overlay6Top,
+              child: _buildHelpLabel('Attack\nLineup'),
+            ),
+            // Overlay 7 - Defense Lineup
+            Positioned(
+              left: overlay7Left,
+              top: overlay7Top,
+              child: _buildHelpLabel('Defense\nLineup'),
+            ),
+            // Overlay 8 - Choose Opponent
             Positioned(
               left: overlay8Left,
               top: overlay8Top,
-              child: _buildHelpLabel('History'),
+              child: _buildHelpLabel('Choose\nOpponent'),
             ),
+          ],
           // Top stats strip
           const TopStatsStrip(),
         ],

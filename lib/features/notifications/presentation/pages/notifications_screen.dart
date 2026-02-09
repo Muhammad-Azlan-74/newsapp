@@ -442,6 +442,10 @@ class _NotificationCard extends StatelessWidget {
         return Icons.article;
       case NotificationType.hofLiked:
         return Icons.favorite;
+      case NotificationType.hofOfferReceived:
+        return Icons.local_offer;
+      case NotificationType.matchCompleted:
+        return Icons.sports_football;
       case NotificationType.unknown:
         return Icons.notifications;
     }
@@ -453,6 +457,10 @@ class _NotificationCard extends StatelessWidget {
         return Colors.blue;
       case NotificationType.hofLiked:
         return Colors.red;
+      case NotificationType.hofOfferReceived:
+        return Colors.amber;
+      case NotificationType.matchCompleted:
+        return Colors.green;
       case NotificationType.unknown:
         return Colors.grey;
     }

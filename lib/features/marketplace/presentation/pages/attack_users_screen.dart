@@ -39,10 +39,38 @@ class _AttackUsersScreenState extends State<AttackUsersScreen> {
   }
 
   Future<void> _checkActiveAttackAndLoad() async {
-    // First check if user is already attacking someone
+    // First check if user is already attacking someone locally
     final activeMatch = await MatchStorageService.getActiveMatch();
-    if (activeMatch != null && mounted) {
-      _showAlreadyAttackingDialog(activeMatch);
+    
+    if (activeMatch != null) {
+      // Verify with server
+      try {
+        final history = await _cardRepository.getMatchesHistory();
+        final serverMatch = history.data.cast<MatchHistoryItem?>().firstWhere(
+          (m) => m!.id == activeMatch.matchId,
+          orElse: () => null,
+        );
+
+        if (serverMatch == null) {
+          await MatchStorageService.clearMatch();
+          if (mounted) _loadUsers();
+          return;
+        }
+
+        if (serverMatch.status != 'PREPARATION' && serverMatch.status != 'IN_PROGRESS') {
+          await MatchStorageService.clearMatch();
+          if (mounted) _loadUsers();
+          return;
+        }
+
+        if (mounted) {
+          _showAlreadyAttackingDialog(activeMatch);
+        }
+      } catch (e) {
+        if (mounted) {
+          _showAlreadyAttackingDialog(activeMatch);
+        }
+      }
       return;
     }
 
@@ -110,6 +138,22 @@ class _AttackUsersScreenState extends State<AttackUsersScreen> {
         ),
         actions: [
           TextButton(
+            onPressed: () async {
+              // Force calculation on server if needed
+              try {
+                if (match.preparationDeadline.isBefore(DateTime.now())) {
+                  await _cardRepository.calculateMatchResult(match.matchId);
+                }
+              } catch (e) {
+                debugPrint('Failed to trigger calculation: $e');
+              }
+
+              if (context.mounted) Navigator.pop(context);
+              await _checkActiveAttackAndLoad();
+            },
+            child: const Text('Refresh Status', style: TextStyle(color: Colors.orange)),
+          ),
+          TextButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Go back from this screen
@@ -125,10 +169,11 @@ class _AttackUsersScreenState extends State<AttackUsersScreen> {
     if (duration.isNegative) return 'Ended';
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
+    final seconds = duration.inSeconds % 60;
     if (hours > 0) {
       return '${hours}h ${minutes}m';
     } else {
-      return '${minutes}m';
+      return '${minutes}m ${seconds}s';
     }
   }
 
@@ -349,7 +394,7 @@ class _AttackUsersScreenState extends State<AttackUsersScreen> {
       // Save match data locally
       if (response.data != null) {
         final deadline = response.data!.preparationDeadline ??
-            DateTime.now().add(const Duration(hours: 60));
+            DateTime.now().add(const Duration(minutes: 5));
 
         await MatchStorageService.saveMatch(
           matchId: response.data!.id,
@@ -400,7 +445,7 @@ class _AttackUsersScreenState extends State<AttackUsersScreen> {
   }
 
   void _showAttackSuccessDialog(AttackUser user, MatchData? match) {
-    final deadline = match?.preparationDeadline ?? DateTime.now().add(const Duration(hours: 60));
+    final deadline = match?.preparationDeadline ?? DateTime.now().add(const Duration(minutes: 5));
     final remaining = deadline.difference(DateTime.now());
 
     showDialog(

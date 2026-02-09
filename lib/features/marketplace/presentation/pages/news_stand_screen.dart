@@ -35,18 +35,21 @@ class _NewsStandScreenState extends State<NewsStandScreen> {
   bool _hasMorePages = true;
   Timer? _pollingTimer;
 
+  StreamSubscription? _notificationSub;
+  StreamSubscription? _connectionStatusSub;
+  StreamSubscription? _errorSub;
+
   @override
   void initState() {
     super.initState();
     _loadNotifications();
     _scrollController.addListener(_onScroll);
-    // Socket.IO temporarily disabled - using polling instead
-    // _initializeSocketConnection();
+    _initializeSocketConnection();
 
-    // Auto-refresh every 10 seconds to check for new notifications
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (mounted && !_isLoading) {
-        debugPrint('📡 Checking for new notifications...');
+    // Fallback polling every 30 seconds in case socket disconnects
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted && !_isLoading && !_socketService.isConnected) {
+        debugPrint('📡 Socket disconnected, polling for notifications...');
         _loadNotifications(refresh: true, silent: true);
       }
     });
@@ -61,17 +64,17 @@ class _NewsStandScreenState extends State<NewsStandScreen> {
         await _socketService.connect(accessToken);
 
         // Listen for incoming notifications
-        _socketService.notificationStream.listen((notification) {
+        _notificationSub = _socketService.notificationStream.listen((notification) {
           _handleIncomingNotification(notification);
         });
 
         // Listen for connection status
-        _socketService.connectionStatusStream.listen((isConnected) {
+        _connectionStatusSub = _socketService.connectionStatusStream.listen((isConnected) {
           debugPrint('Socket connection status: $isConnected');
         });
 
         // Listen for errors
-        _socketService.errorStream.listen((error) {
+        _errorSub = _socketService.errorStream.listen((error) {
           debugPrint('Socket error: $error');
         });
       }
@@ -118,7 +121,7 @@ class _NewsStandScreenState extends State<NewsStandScreen> {
               ),
             ],
           ),
-          backgroundColor: Colors.blue.shade700,
+          backgroundColor: _getSnackBarColor(notification.type),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 4),
         ),
@@ -126,10 +129,28 @@ class _NewsStandScreenState extends State<NewsStandScreen> {
     }
   }
 
+  Color _getSnackBarColor(String type) {
+    switch (type) {
+      case 'NEWS_PUBLISHED':
+        return Colors.blue.shade700;
+      case 'HOF_LIKED':
+        return Colors.red.shade700;
+      case 'HOF_OFFER_RECEIVED':
+        return Colors.amber.shade700;
+      case 'MATCH_COMPLETED':
+        return Colors.green.shade700;
+      default:
+        return Colors.blue.shade700;
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
     _pollingTimer?.cancel();
+    _notificationSub?.cancel();
+    _connectionStatusSub?.cancel();
+    _errorSub?.cancel();
     // Keep socket alive - don't disconnect
     super.dispose();
   }
@@ -227,7 +248,6 @@ class _NewsStandScreenState extends State<NewsStandScreen> {
     switch (notification.type) {
       case 'NEWS_PUBLISHED':
         // TODO: Navigate to news detail screen
-        // Navigator.pushNamed(context, '/news-detail', arguments: notification.newsId);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Navigate to news: ${notification.newsId}'),
@@ -236,10 +256,25 @@ class _NewsStandScreenState extends State<NewsStandScreen> {
         break;
       case 'HOF_LIKED':
         // TODO: Navigate to Hall of Fame screen
-        // Navigator.pushNamed(context, '/hof-detail', arguments: notification.hofUserId);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Navigate to HOF: ${notification.hofUserId}'),
+          ),
+        );
+        break;
+      case 'HOF_OFFER_RECEIVED':
+        // TODO: Navigate to Hall of Fame offer detail
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Offer of \$${notification.offerAmount} from ${notification.offerMakerName}'),
+          ),
+        );
+        break;
+      case 'MATCH_COMPLETED':
+        // TODO: Navigate to match result screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Match ${notification.matchResult}: ${notification.yourScore} - ${notification.opponentScore}'),
           ),
         );
         break;

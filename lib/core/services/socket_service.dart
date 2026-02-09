@@ -47,22 +47,19 @@ class SocketService {
       debugPrint('🔗 Socket.IO URL: $baseUrl');
 
       // Initialize socket with configuration (v3.x API)
-      // IMPORTANT: Use polling only, disable auto-upgrade to websocket
       _socket = IO.io(
         baseUrl,
-        <String, dynamic>{
-          'transports': ['polling'], // Use polling only
-          'upgrade': false, // CRITICAL: Disable auto-upgrade to websocket
-          'autoConnect': false, // Manual connection
-          'reconnection': true, // Enable reconnection
-          'reconnectionAttempts': 5, // Max reconnection attempts
-          'reconnectionDelay': 2000, // Delay between attempts (ms)
-          'reconnectionDelayMax': 5000, // Max delay
-          'timeout': 20000, // Connection timeout
-          'forceNew': true, // Force new connection
-          'multiplex': false, // Disable multiplexing
-          'path': '/socket.io/', // Explicit Socket.IO path
-        },
+        IO.OptionBuilder()
+            .setTransports(['polling'])
+            .disableAutoConnect()
+            .enableReconnection()
+            .setReconnectionAttempts(5)
+            .setReconnectionDelay(2000)
+            .setReconnectionDelayMax(5000)
+            .setAuth({'token': _accessToken})
+            .setPath('/socket.io/')
+            .setExtraHeaders({})
+            .build(),
       );
 
       _setupEventListeners();
@@ -126,16 +123,19 @@ class SocketService {
       try {
         debugPrint('📬 Notification received: $data');
 
-        // Parse notification - data already comes in the correct format
+        final notifData = data is Map<String, dynamic> ? data : <String, dynamic>{};
+        final nestedData = notifData['data'] as Map<String, dynamic>?;
+        final timestamp = notifData['timestamp'] ?? DateTime.now().toIso8601String();
+
         final notification = NotificationModel.fromJson({
-          '_id': data['notificationId'] ?? data['_id'] ?? '',
-          'type': data['type'] ?? 'UNKNOWN',
-          'title': data['title'] ?? '',
-          'body': data['body'] ?? '',
-          'data': data['data'],
+          '_id': nestedData?['notificationId'] ?? notifData['notificationId'] ?? notifData['_id'] ?? '',
+          'type': notifData['type'] ?? 'UNKNOWN',
+          'title': notifData['title'] ?? '',
+          'body': notifData['body'] ?? '',
+          'data': nestedData,
           'read': false,
-          'sentAt': data['sentAt'] ?? DateTime.now().toIso8601String(),
-          'createdAt': data['createdAt'] ?? DateTime.now().toIso8601String(),
+          'sentAt': timestamp,
+          'createdAt': timestamp,
         });
 
         _notificationController.add(notification);

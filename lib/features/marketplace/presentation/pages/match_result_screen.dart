@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/network/api_client.dart';
+import 'package:newsapp/core/services/auth_storage_service.dart';
 import 'package:newsapp/core/services/match_result_service.dart';
+import 'package:newsapp/core/services/match_storage_service.dart';
+import 'package:newsapp/features/marketplace/presentation/pages/reward_card_selection_screen.dart';
 import 'package:newsapp/features/user/data/models/card_model.dart';
 import 'package:newsapp/features/user/data/repositories/card_repository.dart';
 
@@ -33,6 +36,7 @@ class _MatchResultScreenState extends State<MatchResultScreen>
   bool _isLoading = true;
   String? _error;
   MatchHistoryItem? _match;
+  String? _currentUserId;
 
   // Stats comparison
   Map<String, int> _userStats = {};
@@ -44,18 +48,18 @@ class _MatchResultScreenState extends State<MatchResultScreen>
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
 
-  // All 10 stat names
+  // All 10 stat names (must match API response)
   static const List<String> _allStatNames = [
+    'Accuracy',
+    'IQ',
+    'Clutch',
     'Speed',
     'Agility',
-    'Acceleration',
-    'Strength',
-    'Awareness',
-    'Catching',
-    'Throwing',
-    'Carrying',
-    'Tackling',
+    'Power',
+    'Hands',
+    'Route',
     'Blocking',
+    'Tackling',
   ];
 
   @override
@@ -82,6 +86,10 @@ class _MatchResultScreenState extends State<MatchResultScreen>
 
   Future<void> _loadMatchResult() async {
     try {
+      // Get current user ID
+      final userData = await AuthStorageService.getUserData();
+      _currentUserId = userData?['_id'] as String? ?? userData?['id'] as String?;
+
       // Get match history to find this specific match
       final historyResponse = await _cardRepository.getMatchesHistory();
 
@@ -99,6 +107,16 @@ class _MatchResultScreenState extends State<MatchResultScreen>
         return;
       }
 
+      // Check if match is actually finished
+      if (match.status == 'PREPARATION' || match.status == 'IN_PROGRESS') {
+        setState(() {
+          _match = match;
+          _isLoading = false;
+          _error = null;
+        });
+        return; // Do not clear lock or start animation yet
+      }
+
       // Calculate stats comparison based on scores
       // The API should have already calculated the scores
       _calculateStatsFromScores(match);
@@ -108,12 +126,14 @@ class _MatchResultScreenState extends State<MatchResultScreen>
         _isLoading = false;
       });
 
-      // Clear the pending result
+      // Clear the pending result and active match ONLY status is final
       await MatchResultService.clearPendingResult();
+      await MatchStorageService.clearMatch();
 
       // Start animation
       _animationController.forward();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Failed to load match result: $e';
         _isLoading = false;
@@ -133,6 +153,9 @@ class _MatchResultScreenState extends State<MatchResultScreen>
   }
 
   String get _resultText {
+    if (_match?.status == 'PREPARATION' || _match?.status == 'IN_PROGRESS') {
+      return 'PROCESSING';
+    }
     if (_userWins > _opponentWins) {
       return 'VICTORY!';
     } else if (_userWins < _opponentWins) {
@@ -143,6 +166,9 @@ class _MatchResultScreenState extends State<MatchResultScreen>
   }
 
   Color get _resultColor {
+    if (_match?.status == 'PREPARATION' || _match?.status == 'IN_PROGRESS') {
+      return Colors.blue;
+    }
     if (_userWins > _opponentWins) {
       return Colors.green;
     } else if (_userWins < _opponentWins) {
@@ -153,6 +179,9 @@ class _MatchResultScreenState extends State<MatchResultScreen>
   }
 
   IconData get _resultIcon {
+    if (_match?.status == 'PREPARATION' || _match?.status == 'IN_PROGRESS') {
+      return Icons.hourglass_top;
+    }
     if (_userWins > _opponentWins) {
       return Icons.emoji_events;
     } else if (_userWins < _opponentWins) {
@@ -218,6 +247,62 @@ class _MatchResultScreenState extends State<MatchResultScreen>
   }
 
   Widget _buildResultView() {
+    // If processing, show simpler view
+    if (_match?.status == 'PREPARATION' || _match?.status == 'IN_PROGRESS') {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.hourglass_top, color: Colors.blue, size: 80),
+            const SizedBox(height: 24),
+            const Text(
+              'PROCESSING RESULT',
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                'The match has ended locally, but the server is still calculating the results. Please wait...',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () async {
+                // Try to force calculation if deadline passed
+                if (_match != null && _match!.id.isNotEmpty) {
+                  try {
+                    await _cardRepository.calculateMatchResult(_match!.id);
+                  } catch (e) {
+                    debugPrint('Calculation trigger failed (might be too early): $e');
+                  }
+                }
+                // Then reload
+                _loadMatchResult();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text('Check Again'),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close', style: TextStyle(color: Colors.white54)),
+            ),
+          ],
+        ),
+      );
+    }
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -450,7 +535,140 @@ class _MatchResultScreenState extends State<MatchResultScreen>
     );
   }
 
+  bool get _isWinner =>
+      _match != null &&
+      _currentUserId != null &&
+      _match!.winnerId == _currentUserId;
+
+  bool get _hasCardSelectionPending =>
+      _isWinner && _match!.cardSelectionStatus == 'PENDING';
+
+  bool get _hasCardSelectionDone =>
+      _isWinner &&
+      (_match!.cardSelectionStatus == 'SELECTED' ||
+          _match!.cardSelectionStatus == 'AUTO_AWARDED');
+
   Widget _buildContinueButton() {
+    if (_hasCardSelectionPending) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final result = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RewardCardSelectionScreen(
+                        matchId: _match!.id,
+                        opponentName: _match!.getOpponent(_currentUserId!).fullName,
+                        isAttacker: widget.isAttacker,
+                        cardSelectionDeadline: _match!.cardSelectionDeadline,
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    // Reload to update status
+                    setState(() => _isLoading = true);
+                    _loadMatchResult();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber[700],
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.card_giftcard, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      'Select Your Reward Card',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Skip for now',
+                style: TextStyle(color: Colors.white54),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_hasCardSelectionDone) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.withOpacity(0.5)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    _match!.cardSelectionStatus == 'SELECTED'
+                        ? 'Card claimed!'
+                        : 'Card auto-awarded',
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _resultColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: SizedBox(

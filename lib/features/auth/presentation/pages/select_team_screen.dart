@@ -111,13 +111,106 @@ class _SelectTeamScreenState extends State<SelectTeamScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
 
-        CustomSnackbar.show(
-          context,
-          'Registration failed: ${e.toString()}',
-          isError: true,
-        );
+        // Get error message from exception
+        String errorMessage = e.toString();
+        String displayMessage = 'Registration failed. Please try again.';
+        bool shouldRedirectToOtp = false;
+
+        // Handle specific error cases more gracefully
+        if (errorMessage.contains('No internet connection')) {
+          displayMessage = 
+              'Connection is slow or unstable. Please check your internet and try again.';
+          _showRetryDialog(displayMessage);
+          return;
+        } else if (errorMessage.toLowerCase().contains('user already exists') ||
+            errorMessage.toLowerCase().contains('already exists')) {
+          // User might be in partial state - redirect to OTP verification
+          displayMessage = 
+              'Your account already exists but may need verification. Redirecting to verification...';
+          shouldRedirectToOtp = true;
+        } else if (errorMessage.toLowerCase().contains('not verified') ||
+            errorMessage.toLowerCase().contains('unverified')) {
+          // User exists but is not verified - redirect to OTP
+          displayMessage = 
+              'Your account needs verification. We\'ll send a new code to your email.';
+          shouldRedirectToOtp = true;
+        } else if (errorMessage.contains('timeout')) {
+          displayMessage = 
+              'Request timed out. The server is slow to respond. Please try again.';
+          _showRetryDialog(displayMessage);
+          return;
+        } else {
+          // Extract the actual error message if available
+          if (errorMessage.contains(':')) {
+            final parts = errorMessage.split(':');
+            if (parts.length > 1) {
+              displayMessage = parts.last.trim();
+            }
+          }
+        }
+
+        if (shouldRedirectToOtp) {
+          // Show message and redirect to OTP screen
+          CustomSnackbar.show(
+            context,
+            displayMessage,
+            isError: false,
+          );
+
+          // Wait a moment for user to read the message
+          await Future.delayed(const Duration(seconds: 2));
+
+          if (mounted) {
+            // Redirect to OTP verification screen
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => VerifyOtpScreen(
+                  email: widget.signupData.email,
+                  isFromSignup: true,
+                ),
+              ),
+            );
+          }
+        } else {
+          CustomSnackbar.show(
+            context,
+            displayMessage,
+            isError: true,
+          );
+        }
       }
     }
+  }
+
+  /// Show retry dialog for network errors
+  void _showRetryDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Connection Issue'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                // User can try again manually
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                // Retry the registration
+                _handleNext();
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

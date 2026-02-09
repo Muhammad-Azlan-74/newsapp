@@ -13,6 +13,7 @@ import 'package:newsapp/features/user/data/repositories/user_preferences_reposit
 import 'package:newsapp/core/services/team_image_cache_service.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
+import 'verify_otp_screen.dart';
 
 /// Login Screen
 ///
@@ -124,15 +125,124 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) {
           setState(() => _isLoading = false);
 
-          // Show error message
-          CustomSnackbar.show(
-            context,
-            e.toString().replaceAll('ApiException: ', ''),
-            isError: true,
-          );
+          // Get error message
+          String errorMessage = e.toString();
+          String displayMessage = errorMessage.replaceAll('ApiException: ', '');
+          bool shouldRedirectToOtp = false;
+          bool showInvalidCredentialsDialog = false;
+
+          // Handle specific error cases
+          if (errorMessage.toLowerCase().contains('not verified') ||
+              errorMessage.toLowerCase().contains('unverified') ||
+              errorMessage.toLowerCase().contains('verify your email')) {
+            // User exists but not verified - redirect to OTP
+            displayMessage = 
+                'Your account needs verification. We\'ll send a new code to your email.';
+            shouldRedirectToOtp = true;
+          } else if (errorMessage.contains('No internet connection')) {
+            displayMessage = 
+                'Connection is slow or unstable. Please check your internet and try again.';
+          } else if (errorMessage.contains('timeout')) {
+            displayMessage = 
+                'Request timed out. The server is slow to respond. Please try again.';
+          } else if (errorMessage.toLowerCase().contains('invalid credentials') ||
+              errorMessage.toLowerCase().contains('incorrect') ||
+              errorMessage.toLowerCase().contains('wrong password')) {
+            // Could be wrong password OR unverified account
+            // Show dialog with options
+            showInvalidCredentialsDialog = true;
+          }
+
+          if (shouldRedirectToOtp) {
+            // Show message first
+            CustomSnackbar.show(
+              context,
+              displayMessage,
+              isError: false,
+            );
+
+            // Wait a moment for user to read the message
+            await Future.delayed(const Duration(seconds: 2));
+
+            if (mounted) {
+              // Redirect to OTP verification screen
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => VerifyOtpScreen(
+                    email: _emailController.text,
+                    isFromSignup: true,
+                  ),
+                ),
+              );
+            }
+          } else if (showInvalidCredentialsDialog) {
+            // Show dialog with recovery options
+            _showLoginErrorDialog();
+          } else {
+            // Show error message
+            CustomSnackbar.show(
+              context,
+              displayMessage,
+              isError: true,
+            );
+          }
         }
       }
     }
+  }
+
+  /// Show login error dialog with recovery options
+  void _showLoginErrorDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Login Failed'),
+          content: const Text(
+            'Invalid email or password.\n\n'
+            'If you just signed up, your account may need verification. '
+            'Would you like to verify your account or reset your password?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                // User can try again
+              },
+              child: const Text('Try Again'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                // Navigate to forgot password
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ForgotPasswordScreen(),
+                  ),
+                );
+              },
+              child: const Text('Reset Password'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                // Navigate to OTP verification
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => VerifyOtpScreen(
+                      email: _emailController.text,
+                      isFromSignup: true,
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Verify Account'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Navigate to signup screen

@@ -97,12 +97,16 @@ class NotificationData {
   final String? newsId;
   final String? teamId;
   final String? hofId;
+  final String? matchId;
+  final String? offerId;
   final Map<String, dynamic>? extras;
 
   NotificationData({
     this.newsId,
     this.teamId,
     this.hofId,
+    this.matchId,
+    this.offerId,
     this.extras,
   });
 
@@ -112,6 +116,8 @@ class NotificationData {
       newsId: json['newsId'] as String?,
       teamId: json['teamId'] as String?,
       hofId: json['hofId'] as String?,
+      matchId: json['matchId'] as String?,
+      offerId: json['offerId'] as String?,
       extras: json,
     );
   }
@@ -122,6 +128,8 @@ class NotificationData {
     if (newsId != null) data['newsId'] = newsId;
     if (teamId != null) data['teamId'] = teamId;
     if (hofId != null) data['hofId'] = hofId;
+    if (matchId != null) data['matchId'] = matchId;
+    if (offerId != null) data['offerId'] = offerId;
     if (extras != null) data.addAll(extras!);
     return data;
   }
@@ -131,6 +139,8 @@ class NotificationData {
 enum NotificationType {
   newsPublished('NEWS_PUBLISHED'),
   hofLiked('HOF_LIKED'),
+  hofOfferReceived('HOF_OFFER_RECEIVED'),
+  matchCompleted('MATCH_COMPLETED'),
   unknown('UNKNOWN');
 
   final String value;
@@ -142,6 +152,10 @@ enum NotificationType {
         return NotificationType.newsPublished;
       case 'HOF_LIKED':
         return NotificationType.hofLiked;
+      case 'HOF_OFFER_RECEIVED':
+        return NotificationType.hofOfferReceived;
+      case 'MATCH_COMPLETED':
+        return NotificationType.matchCompleted;
       default:
         return NotificationType.unknown;
     }
@@ -154,6 +168,10 @@ enum NotificationType {
         return 'News Update';
       case NotificationType.hofLiked:
         return 'Hall of Fame';
+      case NotificationType.hofOfferReceived:
+        return 'HOF Offer';
+      case NotificationType.matchCompleted:
+        return 'Match Result';
       case NotificationType.unknown:
         return 'Notification';
     }

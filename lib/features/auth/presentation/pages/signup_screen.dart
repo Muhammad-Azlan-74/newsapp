@@ -75,6 +75,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   /// Handle signup action
   Future<void> _handleSignup() async {
+    // Check terms and conditions first
     if (!_agreeToTerms) {
       CustomSnackbar.show(
         context,
@@ -84,6 +85,54 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
+    // Validate phone number is provided and valid
+    if (_completePhoneNumber.isEmpty || !_isPhoneValid) {
+      CustomSnackbar.show(
+        context,
+        'Please enter a valid phone number',
+        isError: true,
+      );
+      return;
+    }
+
+    // Validate all other required fields
+    if (_nameController.text.trim().isEmpty) {
+      CustomSnackbar.show(
+        context,
+        'Please enter your full name',
+        isError: true,
+      );
+      return;
+    }
+
+    if (_emailController.text.trim().isEmpty || !_emailController.text.contains('@')) {
+      CustomSnackbar.show(
+        context,
+        'Please enter a valid email',
+        isError: true,
+      );
+      return;
+    }
+
+    if (_passwordController.text.isEmpty || _passwordController.text.length < 8) {
+      CustomSnackbar.show(
+        context,
+        'Password must be at least 8 characters',
+        isError: true,
+      );
+      return;
+    }
+
+    if (_confirmPasswordController.text != _passwordController.text) {
+      CustomSnackbar.show(
+        context,
+        'Passwords do not match',
+        isError: true,
+      );
+      return;
+    }
+
+    // If all validations pass, proceed with form validation and signup
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
@@ -98,8 +147,8 @@ class _SignupScreenState extends State<SignupScreen> {
           MaterialPageRoute(
             builder: (context) => SelectTeamScreen(
               signupData: SignupData(
-                name: _nameController.text,
-                email: _emailController.text,
+                name: _nameController.text.trim(),
+                email: _emailController.text.trim(),
                 phoneNumber: _completePhoneNumber,
                 password: _passwordController.text,
               ),

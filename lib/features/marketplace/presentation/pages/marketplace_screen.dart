@@ -39,7 +39,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   }
 
   Future<void> _loadUserName() async {
-    final name = await AuthStorageService.getUserName();
+    // Prefer fullName for greeting, never fall back to email
+    final name = await AuthStorageService.getFullName() ?? await AuthStorageService.getUserName();
     if (mounted) {
       setState(() {
         _userName = name;
@@ -71,48 +72,51 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   }
 
   /// Build a help label widget (same design as before but with animation)
-  Widget _buildHelpLabel(String text, {double? width}) {
+  Widget _buildHelpLabel(String text, {double? width, VoidCallback? onTap}) {
     return AnimatedOpacity(
       opacity: _showHelpLabels ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 300),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Container(
-            width: width,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.5),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              width: width,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 1,
                 ),
-              ],
-            ),
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withOpacity(0.7),
-                    offset: const Offset(1, 1),
-                    blurRadius: 3,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.7),
+                      offset: const Offset(1, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
@@ -143,7 +147,19 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   List<BuildingOverlay> _buildOverlays() {
     final overlays = MarketplaceOverlays.all;
 
-    return overlays.map((overlay) {
+    // Add sign out overlay
+    final allOverlays = [
+      ...overlays,
+      const BuildingOverlay(
+        left: 0.82,
+        top: 0.54,
+        width: 0.12,
+        height: 0.08,
+        label: 'SignOut',
+      ),
+    ];
+
+    return allOverlays.map((overlay) {
       final label = overlay.label;
 
       // Determine the route based on the label
@@ -173,6 +189,19 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         case 'Screenbook':
           route = AppRoutes.sportsbook;
           break;
+        case 'SignOut':
+          return overlay.copyWith(
+            customWidget: GestureDetector(
+              onTap: _handleSignOut,
+              child: const Center(
+                child: Icon(
+                  Icons.logout,
+                  color: Colors.black,
+                  size: 28,
+                ),
+              ),
+            ),
+          );
         default:
           route = AppRoutes.marketplace;
       }
@@ -354,6 +383,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           if (_showWelcomeBubble)
             WelcomeChatBubble(
               isFirstTime: _isFirstTime,
+              customMessage: _isFirstTime
+                  ? null
+                  : 'Welcome back ${_userName ?? ''}',
               onDismissed: () {
                 setState(() {
                   _showWelcomeBubble = false;
@@ -382,63 +414,63 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             Positioned(
               left: 0.01 * screenWidth,
               top: 0.25 * screenHeight + 5,
-              child: _buildHelpLabel('Social-Bar', width: 80),
+              child: _buildHelpLabel(
+                'Social-Bar',
+                width: 80,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.leftZoneDetail),
+              ),
             ),
           // Training Ground - left: 0.33, top: 0.15
           if (_showHelpLabels)
             Positioned(
               left: 0.33 * screenWidth + 5,
               top: 0.15 * screenHeight + 5,
-              child: _buildHelpLabel('Training Ground'),
+              child: _buildHelpLabel(
+                'Training Ground',
+                onTap: () => Navigator.pushNamed(context, AppRoutes.centerHubDetail),
+              ),
             ),
           // Hall of Fame - left: 0.79, top: 0.2
           if (_showHelpLabels)
             Positioned(
               left: 0.79 * screenWidth + 5,
               top: 0.2 * screenHeight + 5,
-              child: _buildHelpLabel('HOF'),
+              child: _buildHelpLabel(
+                'HOF',
+                onTap: () => Navigator.pushNamed(context, AppRoutes.rightTopZoneDetail),
+              ),
             ),
-          // Office Building - left: 0.2, top: 0.03
+          // Office Building - left: 0.2, top: 0.12
           if (_showHelpLabels)
             Positioned(
-              left: 0.2 * screenWidth + 5,
-              top: 0.03 * screenHeight + 12,
-              child: _buildHelpLabel('Office'),
+              left: 0.14 * screenWidth,
+              top: 0.12 * screenHeight,
+              child: _buildHelpLabel(
+                'Office',
+                onTap: () => Navigator.pushNamed(context, AppRoutes.rightBottomZoneDetail),
+              ),
             ),
           // News Stall - left: 0.61, top: 0.62
           if (_showHelpLabels)
             Positioned(
               left: 0.61 * screenWidth + 5,
               top: 0.62 * screenHeight + 5,
-              child: _buildHelpLabel('News Stand'),
+              child: _buildHelpLabel(
+                'News Stand',
+                onTap: () => Navigator.pushNamed(context, AppRoutes.newsStand),
+              ),
             ),
           // Sportsbook - left: 0.64, top: 0.32
           if (_showHelpLabels)
             Positioned(
               left: 0.64 * screenWidth + 5,
               top: 0.32 * screenHeight + 5,
-              child: _buildHelpLabel('Sportsbook', width: 105),
-            ),
-          // Sign Out button - EDIT POSITION HERE ↓
-          Positioned(
-            top: 470,     // ← Edit this value to move UP/DOWN
-            right: 5,   // ← Edit this value to move LEFT/RIGHT
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _handleSignOut,
-                borderRadius: BorderRadius.circular(50),
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.logout,
-                    color: Colors.black,
-                    size: 28,
-                  ),
-                ),
+              child: _buildHelpLabel(
+                'Sportsbook',
+                width: 105,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.sportsbook),
               ),
             ),
-          ),
           // Top stats strip
           const TopStatsStrip(),
         ],

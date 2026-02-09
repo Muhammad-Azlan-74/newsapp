@@ -378,12 +378,20 @@ class _MatchesHistoryScreenState extends State<MatchesHistoryScreen> {
 
     switch (match.status) {
       case 'PREPARATION':
-        statusColor = Colors.orange;
-        statusIcon = Icons.timer;
-        statusText = 'Preparation';
+        // Check if deadline has passed
+        if (match.preparationDeadline != null && 
+            match.preparationDeadline!.isBefore(DateTime.now())) {
+            statusColor = Colors.purple;
+            statusIcon = Icons.hourglass_bottom;
+            statusText = 'Processing';
+        } else {
+            statusColor = Colors.orange;
+            statusIcon = Icons.timer;
+            statusText = 'Preparation';
+        }
         break;
       case 'IN_PROGRESS':
-        statusColor = Colors.blue;
+        statusColor = Colors.purple;
         statusIcon = Icons.sports_mma;
         statusText = 'In Progress';
         break;
@@ -412,11 +420,39 @@ class _MatchesHistoryScreenState extends State<MatchesHistoryScreen> {
         statusIcon = Icons.help_outline;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: BackdropFilter(
+    return GestureDetector(
+      onTap: () async {
+        // If match is stuck in preparation and deadline passed, try to trigger calculation
+        if (match.status == 'PREPARATION' && 
+            match.preparationDeadline != null && 
+            match.preparationDeadline!.isBefore(DateTime.now())) {
+              
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Triggering result calculation...'),
+              backgroundColor: Colors.purple,
+              duration: Duration(seconds: 1),
+            ),
+          );
+          
+          try {
+            await _cardRepository.calculateMatchResult(match.id);
+            // Refresh list
+            _loadMatches();
+          } catch (e) {
+            if (context.mounted) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to calculate: $e')),
+              );
+            }
+          }
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -615,10 +651,11 @@ class _MatchesHistoryScreenState extends State<MatchesHistoryScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  String _formatDate(DateTime? date) {
+String _formatDate(DateTime? date) {
     if (date == null) return 'Unknown';
     final now = DateTime.now();
     final diff = now.difference(date);

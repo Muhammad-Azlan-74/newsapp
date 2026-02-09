@@ -13,6 +13,7 @@ import 'package:newsapp/features/user/data/repositories/hof_repository.dart';
 import 'package:newsapp/features/user/data/models/hof_user_model.dart';
 import 'package:newsapp/features/marketplace/presentation/pages/friend_hof_hallway_screen.dart';
 import 'package:newsapp/shared/widgets/top_stats_strip.dart';
+import 'package:newsapp/core/services/auth_storage_service.dart';
 
 /// Hall of Fame Detail Screen
 ///
@@ -27,14 +28,50 @@ class RightTopZoneDetailScreen extends StatefulWidget {
 class _RightTopZoneDetailScreenState extends State<RightTopZoneDetailScreen> {
   bool _showHelpLabels = false;
   final HofRepository _hofRepository = HofRepository(ApiClient());
+  String? _userName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final name = await AuthStorageService.getFullName() ?? await AuthStorageService.getUserName();
+    if (mounted) {
+      setState(() {
+        _userName = name;
+      });
+    }
+  }
 
   /// Show HOF Friends dialog with hof_list.png background
+  /// Re-opens the dialog when returning from a friend's HOF
   Future<void> _showHofFriendsDialog() async {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => _HofFriendsDialog(hofRepository: _hofRepository),
-    );
+    while (true) {
+      final selectedUser = await showDialog<HofUser>(
+        context: context,
+        barrierColor: Colors.black.withOpacity(0.5),
+        builder: (context) => _HofFriendsDialog(hofRepository: _hofRepository),
+      );
+
+      // If no user was selected (dialog dismissed), break the loop
+      if (selectedUser == null || !mounted) break;
+
+      // Navigate to friend's HOF hallway and wait for return
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FriendHofHallwayScreen(
+            userId: selectedUser.id,
+            userName: selectedUser.fullName,
+          ),
+        ),
+      );
+
+      // Loop will re-show the dialog
+      if (!mounted) break;
+    }
   }
 
   /// Toggle help labels visibility for 5 seconds
@@ -146,6 +183,67 @@ class _RightTopZoneDetailScreenState extends State<RightTopZoneDetailScreen> {
             overlays: _buildOverlays(),
             child: Container(),
           ),
+          // User name label above the gate
+          if (_userName != null)
+            Positioned(
+              top: screenHeight * 0.22,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.amber.withOpacity(0.6),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.emoji_events,
+                            color: Colors.amber,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            _userName!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black54,
+                                  offset: Offset(1, 1),
+                                  blurRadius: 3,
+                                ),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           // Back button
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
@@ -433,17 +531,8 @@ class _HofFriendsDialogState extends State<_HofFriendsDialog> {
                     color: Colors.amber,
                   ),
                   onTap: () {
-                    // Close dialog and navigate to friend's HOF hallway
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FriendHofHallwayScreen(
-                          userId: user.id,
-                          userName: user.fullName,
-                        ),
-                      ),
-                    );
+                    // Return selected user to caller
+                    Navigator.pop(context, user);
                   },
                 ),
               ),

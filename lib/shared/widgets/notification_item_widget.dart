@@ -134,6 +134,10 @@ class NotificationItemWidget extends StatelessWidget {
         return Icons.article;
       case 'HOF_LIKED':
         return Icons.favorite;
+      case 'HOF_OFFER_RECEIVED':
+        return Icons.local_offer;
+      case 'MATCH_COMPLETED':
+        return Icons.sports_football;
       case 'TRADE':
         return Icons.swap_horiz;
       case 'INJURY':
@@ -149,6 +153,10 @@ class NotificationItemWidget extends StatelessWidget {
         return Colors.blue;
       case 'HOF_LIKED':
         return Colors.red;
+      case 'HOF_OFFER_RECEIVED':
+        return Colors.amber;
+      case 'MATCH_COMPLETED':
+        return Colors.green;
       case 'TRADE':
         return Colors.orange;
       case 'INJURY':

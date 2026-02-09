@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/features/user/data/models/card_model.dart';
+import 'package:newsapp/shared/widgets/flippable_game_card.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 import 'package:newsapp/shared/widgets/top_stats_strip.dart';
@@ -28,6 +30,59 @@ class _RookieDraftScreenState extends State<RookieDraftScreen>
   late List<Animation<double>> _flipAnimations;
   late List<bool> _isRevealed;
   bool _allRevealed = false;
+
+  void _showStatsInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.white, size: 28),
+                      SizedBox(width: 12),
+                      Text('Card Stats Info', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Each card has 10 stats:\n\n'
+                    'Speed • Agility • Acceleration • Strength • Awareness\n'
+                    'Catching • Throwing • Carrying • Tackling • Blocking\n\n'
+                    'Cards come in tiers: Bronze → Silver → Gold → Legend\n'
+                    'Three identical cards merge into the next tier.',
+                    style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.5),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12)),
+                      child: const Text('Got it!'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -382,6 +437,28 @@ class _RookieDraftScreenState extends State<RookieDraftScreen>
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                // Info button
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: GestureDetector(
+                    onTap: () => showLargeCardOverlay(context, card),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.info_outline,
+                        color: Colors.white,
+                        size: 16,
                       ),
                     ),
                   ),

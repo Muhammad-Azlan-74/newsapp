@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/network/api_client.dart';
 import 'package:newsapp/core/network/api_exceptions.dart';
 import 'package:newsapp/features/user/data/models/card_model.dart';
 import 'package:newsapp/features/user/data/repositories/card_repository.dart';
+import 'package:newsapp/shared/widgets/flippable_game_card.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 import 'package:newsapp/shared/widgets/top_stats_strip.dart';
@@ -657,6 +659,61 @@ class _LineupSelectionScreenState extends State<LineupSelectionScreen> {
     );
   }
 
+  void _showStatsInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.white, size: 28),
+                      SizedBox(width: 12),
+                      Text('Card Stats Info', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Each card has 10 stats that determine the outcome of a Parley:\n\n'
+                    'Speed • Agility • Acceleration • Strength • Awareness\n'
+                    'Catching • Throwing • Carrying • Tackling • Blocking\n\n'
+                    'Select 4 player cards + 1 synergy card.\n'
+                    'Each stat is compared individually.\n'
+                    'Win the stat, get the point.\n'
+                    'Most points wins the Parley.',
+                    style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.5),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12)),
+                      child: const Text('Got it!'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCardGrid({
     required List<UserCard> cards,
     required List<UserCard> selectedCards,
@@ -932,6 +989,29 @@ class _LineupSelectionScreenState extends State<LineupSelectionScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+              ),
+            // Info button (top right) - shows large card overlay
+            if (!isSelected && !isUsedInOtherLineup && !isDuplicateCardId)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: () => showLargeCardOverlay(context, card),
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+                    ),
+                    child: const Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 14,
                     ),
                   ),
                 ),

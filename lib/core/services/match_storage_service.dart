@@ -47,10 +47,11 @@ class MatchStorageService {
     }
 
     final deadline = DateTime.parse(deadlineStr);
-    // If deadline has passed, match is no longer in preparation
-    if (deadline.isBefore(DateTime.now())) {
-      return null;
-    }
+    // We do NOT return null if deadline has passed. 
+    // The match is still active on the server until resolved.
+    // if (deadline.isBefore(DateTime.now())) {
+    //   return null;
+    // }
 
     return ActiveMatchInfo(
       matchId: matchId,

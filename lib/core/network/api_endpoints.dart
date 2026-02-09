@@ -3,7 +3,7 @@
 /// Centralized constants for all API endpoints
 class ApiEndpoints {
   // Base URL for the sports app backend
-  static const String baseUrl = 'https://sportsapp-server.vercel.app';
+  static const String baseUrl = 'https://backend-j49h.onrender.com';
 
   // Authentication endpoints (with /api/auth prefix)
   static const String register = '/api/auth/register';
@@ -99,4 +99,17 @@ class ApiEndpoints {
 
   /// Get matches history (attack, defense, or all)
   static const String matches = '/api/game/matches';
+
+  /// Calculate match result manually (if deadline passed)
+  static const String calculateMatchResult = '/api/game/calculate-match-result';
+
+  /// Get match details with full lineup data
+  /// Usage: ApiEndpoints.matchDetails('matchId')
+  static String matchDetails(String matchId) => '/api/game/match/$matchId';
+
+  /// Select reward card after winning a match
+  static const String selectRewardCard = '/api/game/select-reward-card';
+
+  /// Get opponent lineup for a specific match
+  static const String opponentLineup = '/api/game/opponent-lineup';
 }

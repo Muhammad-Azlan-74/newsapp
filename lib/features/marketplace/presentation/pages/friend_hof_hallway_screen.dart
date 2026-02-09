@@ -113,8 +113,8 @@ class FriendHofHallwayScreen extends StatelessWidget {
             width: screenWidth * gateWidth,
             height: screenHeight * gateHeight,
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => FriendHofScreen(
@@ -123,6 +123,11 @@ class FriendHofHallwayScreen extends StatelessWidget {
                     ),
                   ),
                 );
+                // When FriendHofScreen pops, also pop this screen
+                // so user goes back to the friends dialog
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
               },
               child: Container(
                 color: Colors.transparent,

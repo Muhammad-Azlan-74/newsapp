@@ -76,7 +76,7 @@ class _FlippableGameCardState extends State<FlippableGameCard>
       barrierColor: Colors.black.withOpacity(0.7),
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return _LargeCardBackOverlay(
+        return LargeCardBackOverlay(
           card: widget.card,
           tierColor: tierColor,
           animation: animation,
@@ -624,23 +624,73 @@ class _FlippableGameCardState extends State<FlippableGameCard>
   }
 }
 
+/// Static helper to show the large card overlay from any screen
+void showLargeCardOverlay(BuildContext context, UserCard card) {
+  Color getTierColor(String? tier) {
+    switch (tier?.toLowerCase()) {
+      case 'gold':
+        return const Color(0xFFFFD700);
+      case 'silver':
+        return const Color(0xFFC0C0C0);
+      case 'bronze':
+        return const Color(0xFFCD7F32);
+      case 'platinum':
+        return const Color(0xFFE5E4E2);
+      case 'diamond':
+        return const Color(0xFFB9F2FF);
+      default:
+        return Colors.purple;
+    }
+  }
+
+  final tierColor = getTierColor(card.tier);
+
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Card Details',
+    barrierColor: Colors.black.withOpacity(0.7),
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return LargeCardBackOverlay(
+        card: card,
+        tierColor: tierColor,
+        animation: animation,
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final curvedAnimation = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutBack,
+      );
+      return ScaleTransition(
+        scale: curvedAnimation,
+        child: FadeTransition(
+          opacity: animation,
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 /// Large card back overlay that appears when info button is tapped
-class _LargeCardBackOverlay extends StatefulWidget {
+class LargeCardBackOverlay extends StatefulWidget {
   final UserCard card;
   final Color tierColor;
   final Animation<double> animation;
 
-  const _LargeCardBackOverlay({
+  const LargeCardBackOverlay({
     required this.card,
     required this.tierColor,
     required this.animation,
   });
 
   @override
-  State<_LargeCardBackOverlay> createState() => _LargeCardBackOverlayState();
+  State<LargeCardBackOverlay> createState() => LargeCardBackOverlayState();
 }
 
-class _LargeCardBackOverlayState extends State<_LargeCardBackOverlay>
+class LargeCardBackOverlayState extends State<LargeCardBackOverlay>
     with SingleTickerProviderStateMixin {
   late AnimationController _flipController;
 

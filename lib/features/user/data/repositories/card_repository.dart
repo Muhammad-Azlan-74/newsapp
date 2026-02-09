@@ -515,6 +515,147 @@ class CardRepository {
     }
   }
 
+  /// Manually force calculation of match result
+  ///
+  /// Used when match is in PREPARATION but deadline has passed
+  /// [matchId] - ID of the match to calculate
+  Future<void> calculateMatchResult(String matchId) async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      await _apiClient.dio.post(
+        ApiEndpoints.calculateMatchResult,
+        data: {
+          'matchId': matchId,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Get match details with full lineup data
+  ///
+  /// Returns enriched match data including attacker/defender lineups with cards
+  Future<MatchDetailResponse> getMatchDetails(String matchId) async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.matchDetails(matchId),
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      debugPrint('=== MATCH DETAIL RAW RESPONSE ===');
+      debugPrint('${response.data}');
+      debugPrint('=== END MATCH DETAIL ===');
+
+      return MatchDetailResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Get opponent lineup for a specific match
+  ///
+  /// Used by the winner to view available cards before making a selection
+  /// [matchId] - The ID of the match
+  Future<List<UserCard>> getOpponentLineup(String matchId) async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.opponentLineup,
+        queryParameters: {
+          'matchId': matchId,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      debugPrint('=== OPPONENT LINEUP RAW RESPONSE ===');
+      debugPrint('${response.data}');
+      debugPrint('=== END OPPONENT LINEUP ===');
+
+      // Parse the response
+      if (response.data != null && response.data['data'] != null) {
+        final cardsJson = response.data['data'] as List<dynamic>;
+        final cards = cardsJson
+            .map((json) => UserCard.fromJson(json as Map<String, dynamic>))
+            .toList();
+        
+        debugPrint('Parsed ${cards.length} opponent cards');
+        return cards;
+      }
+
+      return [];
+    } on DioException catch (e) {
+      debugPrint('getOpponentLineup ERROR: ${e.message}');
+      debugPrint('getOpponentLineup Response: ${e.response?.data}');
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Select a reward card after winning a match
+  ///
+  /// [matchId] - The ID of the completed match
+  /// [cardId] - The ID of the card to claim from the loser's lineup
+  Future<Map<String, dynamic>> selectRewardCard({
+    required String matchId,
+    required String cardId,
+  }) async {
+    try {
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
+
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.selectRewardCard,
+        data: {
+          'matchId': matchId,
+          'cardId': cardId,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      _handleDioError(e);
+      rethrow;
+    }
+  }
+
   /// Handle Dio errors for rookie draft specifically
   void _handleRookieDraftDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||

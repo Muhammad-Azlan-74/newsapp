@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/core/network/api_client.dart';
 import 'package:newsapp/core/network/api_exceptions.dart';
@@ -595,6 +596,61 @@ class _DefenseLineupSelectionScreenState extends State<DefenseLineupSelectionScr
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showStatsInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.white, size: 28),
+                      SizedBox(width: 12),
+                      Text('Card Stats Info', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Each card has 10 stats that determine the outcome of a Parley:\n\n'
+                    'Speed • Agility • Acceleration • Strength • Awareness\n'
+                    'Catching • Throwing • Carrying • Tackling • Blocking\n\n'
+                    'Select 4 player cards + 1 synergy card.\n'
+                    'Each stat is compared individually.\n'
+                    'Win the stat, get the point.\n'
+                    'Most points wins the Parley.',
+                    style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.5),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12)),
+                      child: const Text('Got it!'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -65,6 +65,8 @@ class AuthStorageService {
     await prefs.remove(_keyUserData);
     await prefs.remove(_keyRememberMe);
     await prefs.remove(_keyFcmToken);
+    await prefs.remove(_keyHasLoggedInBefore);
+    await prefs.remove(_keySelectedTeam);
   }
 
   /// Save complete auth response (token + user data)
@@ -120,7 +122,7 @@ class AuthStorageService {
     await prefs.remove(_keyFcmToken);
   }
 
-  /// Get user's display name
+  /// Get user's display name (prefers fullName, falls back to email)
   static Future<String?> getUserName() async {
     final userData = await getUserData();
     if (userData != null) {
@@ -130,6 +132,36 @@ class AuthStorageService {
           userData['username'] as String? ??
           userData['name'] as String? ??
           userData['email'] as String?;
+    }
+    return null;
+  }
+
+  /// Get user's full name only (no email fallback)
+  static Future<String?> getFullName() async {
+    final userData = await getUserData();
+    if (userData != null) {
+      return userData['fullName'] as String? ??
+          userData['displayName'] as String? ??
+          userData['username'] as String? ??
+          userData['name'] as String?;
+    }
+    return null;
+  }
+
+  /// Get user's email
+  static Future<String?> getUserEmail() async {
+    final userData = await getUserData();
+    if (userData != null) {
+      return userData['email'] as String?;
+    }
+    return null;
+  }
+
+  /// Get user's phone number
+  static Future<String?> getPhoneNumber() async {
+    final userData = await getUserData();
+    if (userData != null) {
+      return userData['phoneNumber'] as String?;
     }
     return null;
   }

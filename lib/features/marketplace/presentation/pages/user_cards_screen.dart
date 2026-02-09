@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:newsapp/core/constants/app_assets.dart';
 import 'package:newsapp/features/user/data/models/card_model.dart';
+import 'package:newsapp/shared/widgets/flippable_game_card.dart';
 import 'package:newsapp/shared/widgets/glassy_back_button.dart';
 import 'package:newsapp/shared/widgets/glassy_help_button.dart';
 import 'package:newsapp/shared/widgets/top_stats_strip.dart';
@@ -17,6 +19,77 @@ class UserCardsScreen extends StatelessWidget {
     super.key,
     required this.cards,
   });
+
+  static void _showStatsInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.white, size: 28),
+                      SizedBox(width: 12),
+                      Text(
+                        'Card Stats Info',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Each card has 10 stats:\n\n'
+                    'Speed • Agility • Acceleration • Strength • Awareness\n'
+                    'Catching • Throwing • Carrying • Tackling • Blocking\n\n'
+                    'Cards come in tiers: Bronze → Silver → Gold → Legend\n'
+                    'Three identical cards merge into the next tier.',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.95),
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      ),
+                      child: const Text('Got it!'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,42 +228,70 @@ class _CardItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Card image
+            // Card image with info button
             Expanded(
               flex: 3,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(10),
-                ),
-                child: card.imageUrl != null && card.imageUrl!.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: card.imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[800],
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(10),
+                    ),
+                    child: card.imageUrl != null && card.imageUrl!.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: card.imageUrl!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[800],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: Colors.grey[800],
+                              child: const Icon(
+                                Icons.broken_image,
+                                color: Colors.white54,
+                                size: 40,
+                              ),
+                            ),
+                          )
+                        : Container(
+                            color: Colors.grey[800],
+                            child: Icon(
+                              card.isPlayerCard ? Icons.person : Icons.auto_awesome,
+                              color: Colors.white54,
+                              size: 40,
                             ),
                           ),
+                  ),
+                  // Info button
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: GestureDetector(
+                      onTap: () => showLargeCardOverlay(context, card),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[800],
-                          child: const Icon(
-                            Icons.broken_image,
-                            color: Colors.white54,
-                            size: 40,
-                          ),
-                        ),
-                      )
-                    : Container(
-                        color: Colors.grey[800],
-                        child: Icon(
-                          card.isPlayerCard ? Icons.person : Icons.auto_awesome,
-                          color: Colors.white54,
-                          size: 40,
+                        child: const Icon(
+                          Icons.info_outline,
+                          color: Colors.white,
+                          size: 16,
                         ),
                       ),
+                    ),
+                  ),
+                ],
               ),
             ),
             // Card info

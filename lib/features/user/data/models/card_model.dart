@@ -133,12 +133,23 @@ class UserCard {
   bool get isSynergyCard => cardType == 'synergy';
 
   factory UserCard.fromJson(Map<String, dynamic> json) {
-    // Parse stats if present
+    // Parse stats if present - handles both List and Map formats
     List<CardStat>? stats;
     if (json['stats'] != null) {
-      stats = (json['stats'] as List<dynamic>)
-          .map((e) => CardStat.fromJson(e as Map<String, dynamic>))
-          .toList();
+      if (json['stats'] is List<dynamic>) {
+        stats = (json['stats'] as List<dynamic>)
+            .map((e) => CardStat.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else if (json['stats'] is Map<String, dynamic>) {
+        // Backend sends stats as flat map: {"Accuracy": 95, "IQ": 92, ...}
+        final statsMap = json['stats'] as Map<String, dynamic>;
+        stats = statsMap.entries
+            .map((e) => CardStat(
+                  statName: e.key,
+                  statValue: (e.value as num?)?.toInt() ?? 0,
+                ))
+            .toList();
+      }
     }
 
     // Parse boost if present
@@ -650,6 +661,9 @@ class MatchHistoryItem {
   final String? winnerId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final DateTime? cardSelectionDeadline;
+  final String? cardSelectionStatus;
+  final String? rewardCardId;
 
   const MatchHistoryItem({
     required this.id,
@@ -662,6 +676,9 @@ class MatchHistoryItem {
     this.winnerId,
     this.createdAt,
     this.updatedAt,
+    this.cardSelectionDeadline,
+    this.cardSelectionStatus,
+    this.rewardCardId,
   });
 
   factory MatchHistoryItem.fromJson(Map<String, dynamic> json) {
@@ -682,6 +699,11 @@ class MatchHistoryItem {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'] as String)
           : null,
+      cardSelectionDeadline: json['cardSelectionDeadline'] != null
+          ? DateTime.tryParse(json['cardSelectionDeadline'] as String)
+          : null,
+      cardSelectionStatus: json['cardSelectionStatus'] as String?,
+      rewardCardId: json['rewardCardId'] as String?,
     );
   }
 
@@ -723,5 +745,137 @@ class MatchesHistoryResponse {
           .map((e) => MatchHistoryItem.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
+  }
+}
+
+/// Match detail lineup info
+class MatchDetailLineup {
+  final List<UserCard> playerCards;
+  final UserCard? synergyCard;
+
+  const MatchDetailLineup({
+    required this.playerCards,
+    this.synergyCard,
+  });
+
+  factory MatchDetailLineup.fromJson(Map<String, dynamic> json) {
+    final playerCardsList = json['playerCards'] as List<dynamic>? ?? [];
+    final parsedPlayerCards = <UserCard>[];
+    for (final e in playerCardsList) {
+      if (e is Map<String, dynamic>) {
+        parsedPlayerCards.add(UserCard.fromJson(e));
+      }
+    }
+
+    UserCard? synergyCard;
+    if (json['synergyCard'] != null && json['synergyCard'] is Map<String, dynamic>) {
+      synergyCard = UserCard.fromJson(json['synergyCard'] as Map<String, dynamic>);
+    }
+
+    return MatchDetailLineup(
+      playerCards: parsedPlayerCards,
+      synergyCard: synergyCard,
+    );
+  }
+}
+
+/// Response model for match detail API (GET /api/game/match/:id)
+class MatchDetailResponse {
+  final String id;
+  final MatchUserInfo attacker;
+  final MatchUserInfo defender;
+  final MatchDetailLineup? attackerLineup;
+  final MatchDetailLineup? defenderLineup;
+  final String status;
+  final int attackerScore;
+  final int defenderScore;
+  final String? winnerId;
+  final DateTime? cardSelectionDeadline;
+  final String? cardSelectionStatus;
+  final String? rewardCardId;
+
+  const MatchDetailResponse({
+    required this.id,
+    required this.attacker,
+    required this.defender,
+    this.attackerLineup,
+    this.defenderLineup,
+    required this.status,
+    required this.attackerScore,
+    required this.defenderScore,
+    this.winnerId,
+    this.cardSelectionDeadline,
+    this.cardSelectionStatus,
+    this.rewardCardId,
+  });
+
+  factory MatchDetailResponse.fromJson(Map<String, dynamic> json) {
+    // The response may have data nested under 'data' or at root level
+    final data = json['data'] as Map<String, dynamic>? ?? json;
+
+    // Handle attackerId/defenderId as either string or populated object
+    MatchUserInfo attacker;
+    if (data['attackerId'] is Map<String, dynamic>) {
+      attacker = MatchUserInfo.fromJson(data['attackerId'] as Map<String, dynamic>);
+    } else {
+      attacker = MatchUserInfo(id: data['attackerId'] as String? ?? '', fullName: '', email: '');
+    }
+
+    MatchUserInfo defender;
+    if (data['defenderId'] is Map<String, dynamic>) {
+      defender = MatchUserInfo.fromJson(data['defenderId'] as Map<String, dynamic>);
+    } else {
+      defender = MatchUserInfo(id: data['defenderId'] as String? ?? '', fullName: '', email: '');
+    }
+
+    // Handle winnerId as either string or populated object
+    String? winnerId;
+    if (data['winnerId'] is Map<String, dynamic>) {
+      winnerId = (data['winnerId'] as Map<String, dynamic>)['_id'] as String?;
+    } else {
+      winnerId = data['winnerId'] as String?;
+    }
+
+    // Handle rewardCardId as either string or populated object
+    String? rewardCardId;
+    if (data['rewardCardId'] is Map<String, dynamic>) {
+      rewardCardId = (data['rewardCardId'] as Map<String, dynamic>)['_id'] as String?;
+    } else {
+      rewardCardId = data['rewardCardId'] as String?;
+    }
+
+    return MatchDetailResponse(
+      id: data['_id'] as String? ?? '',
+      attacker: attacker,
+      defender: defender,
+      attackerLineup: data['attackerLineup'] != null && data['attackerLineup'] is Map<String, dynamic>
+          ? MatchDetailLineup.fromJson(data['attackerLineup'] as Map<String, dynamic>)
+          : null,
+      defenderLineup: data['defenderLineup'] != null && data['defenderLineup'] is Map<String, dynamic>
+          ? MatchDetailLineup.fromJson(data['defenderLineup'] as Map<String, dynamic>)
+          : null,
+      status: data['status'] as String? ?? '',
+      attackerScore: (data['attackerScore'] as num?)?.toInt() ?? 0,
+      defenderScore: (data['defenderScore'] as num?)?.toInt() ?? 0,
+      winnerId: winnerId,
+      cardSelectionDeadline: data['cardSelectionDeadline'] != null
+          ? DateTime.tryParse(data['cardSelectionDeadline'].toString())
+          : null,
+      cardSelectionStatus: data['cardSelectionStatus'] as String?,
+      rewardCardId: rewardCardId,
+    );
+  }
+
+  /// Get the loser's lineup (opponent of the winner)
+  MatchDetailLineup? getLoserLineup() {
+    if (winnerId == null) return null;
+    if (winnerId == attacker.id) return defenderLineup;
+    return attackerLineup;
+  }
+
+  /// Get the loser's info
+  MatchUserInfo getLoser() {
+    if (winnerId == attacker.id) return defender;
+    return attacker;
   }
 }

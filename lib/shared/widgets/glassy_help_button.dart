@@ -3,14 +3,18 @@ import 'dart:ui';
 
 /// Glassy Help Button Widget
 ///
-/// A help button with glassmorphism effect matching the app's button style
-/// Shows a question mark icon for help/info functionality
+/// A button with glassmorphism effect matching the app's button style
+/// Can show different icons based on the icon parameter
 class GlassyHelpButton extends StatelessWidget {
   final VoidCallback? onPressed;
+  final IconData icon;
+  final Color? iconColor;
 
   const GlassyHelpButton({
     super.key,
     this.onPressed,
+    this.icon = Icons.info_outline,
+    this.iconColor,
   });
 
   @override
@@ -35,11 +39,11 @@ class GlassyHelpButton extends StatelessWidget {
                 // Placeholder - functionality to be implemented later
               },
               borderRadius: BorderRadius.circular(30),
-              child: const Padding(
-                padding: EdgeInsets.all(12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
                 child: Icon(
-                  Icons.help_outline,
-                  color: Colors.black,
+                  icon,
+                  color: iconColor ?? Colors.black,
                   size: 20,
                 ),
               ),
