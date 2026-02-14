@@ -44,47 +44,50 @@ class _PersonalOfficeScreenState extends State<PersonalOfficeScreen> {
   }
 
   /// Build a help label widget
-  Widget _buildHelpLabel(String text) {
+  Widget _buildHelpLabel(String text, {VoidCallback? onTap}) {
     return AnimatedOpacity(
       opacity: _showHelpLabels ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 300),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.5),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+      child: GestureDetector(
+        onTap: _showHelpLabels ? onTap : null,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 1,
                 ),
-              ],
-            ),
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withOpacity(0.7),
-                    offset: const Offset(1, 1),
-                    blurRadius: 3,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.7),
+                      offset: const Offset(1, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
@@ -204,10 +207,25 @@ class _PersonalOfficeScreenState extends State<PersonalOfficeScreen> {
       final top = overlay.top * screenHeight + 5;
       final displayName = _getAreaDisplayName(overlay.label);
 
+      VoidCallback? onTap;
+      if (overlay.label == 'Area 1') {
+        onTap = () => showDialog(context: context, builder: (context) => const SettingsTvDialog());
+      } else if (overlay.label == 'Area 2') {
+        onTap = () => showDialog(context: context, builder: (context) => const FantasyDialog());
+      } else if (overlay.label == 'Area 3') {
+        onTap = () => showDialog(context: context, builder: (context) => const StatusDialog());
+      } else if (overlay.label == 'Area 4') {
+        onTap = () => showDialog(context: context, builder: (context) => const SupportDialog());
+      } else if (overlay.label == 'Area 5') {
+        onTap = () => showDialog(context: context, builder: (context) => const PersonalizationDialog());
+      } else if (overlay.label == 'Area 6') {
+        onTap = () => showDialog(context: context, builder: (context) => const CustomizationDialog());
+      }
+
       return Positioned(
         left: left,
         top: top,
-        child: _buildHelpLabel(displayName),
+        child: _buildHelpLabel(displayName, onTap: onTap),
       );
     }).toList();
   }

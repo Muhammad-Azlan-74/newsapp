@@ -36,47 +36,50 @@ class _CenterHubDetailScreenState extends State<CenterHubDetailScreen> {
   }
 
   /// Build a help label widget
-  Widget _buildHelpLabel(String text) {
+  Widget _buildHelpLabel(String text, {VoidCallback? onTap}) {
     return AnimatedOpacity(
       opacity: _showHelpLabels ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 300),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.5),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+      child: GestureDetector(
+        onTap: _showHelpLabels ? onTap : null,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 1,
                 ),
-              ],
-            ),
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withOpacity(0.7),
-                    offset: const Offset(1, 1),
-                    blurRadius: 3,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.7),
+                      offset: const Offset(1, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
@@ -243,21 +246,27 @@ class _CenterHubDetailScreenState extends State<CenterHubDetailScreen> {
                 Positioned(
                   left: 0.001 * screenWidth + 5,
                   top: 0.3 * screenHeight + 5,
-                  child: _buildHelpLabel('Bench'),
+                  child: _buildHelpLabel('Bench', onTap: () {
+                    _showImageDialog(context, 'assets/images/bench.png');
+                  }),
                 ),
               // Help label for Area 2 (Settings) - left: 0.65, top: 0.38
               if (_showHelpLabels)
                 Positioned(
                   left: 0.65 * screenWidth + 5,
                   top: 0.38 * screenHeight + 5,
-                  child: _buildHelpLabel('Settings'),
+                  child: _buildHelpLabel('Settings', onTap: () {
+                    _showImageDialog(context, 'assets/images/settings_training.png');
+                  }),
                 ),
               // Help label for Area 3 (Changes) - left: 0.55, top: 0.6
               if (_showHelpLabels)
                 Positioned(
                   left: 0.55 * screenWidth + 5,
                   top: 0.6 * screenHeight + 5,
-                  child: _buildHelpLabel('Changes'),
+                  child: _buildHelpLabel('Changes', onTap: () {
+                    _showImageDialog(context, 'assets/images/changes.png');
+                  }),
                 ),
             ],
           );

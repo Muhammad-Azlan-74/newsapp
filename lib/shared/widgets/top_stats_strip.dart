@@ -9,7 +9,7 @@ class TopStatsStrip extends StatelessWidget {
   const TopStatsStrip({super.key});
 
   /// Height of the strip content (excluding safe area padding)
-  static const double stripHeight = 32.0;
+  static const double stripHeight = 26.0;
 
   /// Get the total height of the strip including safe area padding
   static double getTotalHeight(BuildContext context) {
@@ -103,17 +103,17 @@ class TopStatsStrip extends StatelessWidget {
     return GestureDetector(
       onTap: () => _showComingSoonDialog(context, feature),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 16),
-            const SizedBox(width: 4),
+            Icon(icon, color: color, size: 12),
+            const SizedBox(width: 2),
             Text(
               value,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
                 shadows: [
                   Shadow(
@@ -141,9 +141,9 @@ class TopStatsStrip extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.only(top: topPadding),
         child: Container(
-          height: 32,
+          height: 26,
           // Leave space for back button (left) and help button (right)
-          padding: const EdgeInsets.symmetric(horizontal: 56),
+          padding: const EdgeInsets.symmetric(horizontal: 50),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [

@@ -82,47 +82,50 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
   }
 
   /// Build a help label widget
-  Widget _buildHelpLabel(String text) {
+  Widget _buildHelpLabel(String text, {VoidCallback? onTap}) {
     return AnimatedOpacity(
       opacity: _showHelpLabels ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 300),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.5),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+      child: GestureDetector(
+        onTap: _showHelpLabels ? onTap : null,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 1,
                 ),
-              ],
-            ),
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withOpacity(0.7),
-                    offset: const Offset(1, 1),
-                    blurRadius: 3,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.7),
+                      offset: const Offset(1, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
@@ -258,56 +261,72 @@ class _RightBottomZoneDetailScreenState extends State<RightBottomZoneDetailScree
                   Positioned(
                     left: 0.01 * screenWidth + 10,
                     top: 0.17 * (screenWidth * 1.5) + 10,
-                    child: _buildHelpLabel('Conference Room'),
+                  child: _buildHelpLabel('Conference Room', onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.conferenceRoom);
+                  }),
                   ),
                 // Man Cave (Office 3) - left: 0.60, top: 0.87
                 if (_showHelpLabels)
                   Positioned(
                     left: 0.60 * screenWidth + 10,
                     top: 0.87 * (screenWidth * 1.5) + 10,
-                    child: _buildHelpLabel('Man Cave'),
+                  child: _buildHelpLabel('Man Cave', onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.manCave);
+                  }),
                   ),
                 // Personal Office (Office 4) - left: 0.001, top: 0.43
                 if (_showHelpLabels)
                   Positioned(
                     left: 0.001 * screenWidth + 10,
                     top: 0.43 * (screenWidth * 1.5) + 10,
-                    child: _buildHelpLabel('Personal Office'),
+                  child: _buildHelpLabel('Personal Office', onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.personalOffice);
+                  }),
                   ),
                 // Doctor's Office (Office 5) - left: 0.001, top: 0.87
                 if (_showHelpLabels)
                   Positioned(
                     left: 0.001 * screenWidth + 10,
                     top: 0.87 * (screenWidth * 1.5) + 10,
-                    child: _buildHelpLabel("Doctor's Office"),
+                  child: _buildHelpLabel("Doctor's Office", onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.doctorsOffice);
+                  }),
                   ),
                 // Janitor (Office 6) - left: 0.60, top: 0.43
                 if (_showHelpLabels)
                   Positioned(
                     left: 0.60 * screenWidth + 10,
                     top: 0.43 * (screenWidth * 1.5) + 10,
-                    child: _buildHelpLabel('Janitor'),
+                  child: _buildHelpLabel('Janitor', onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.janitorOffice);
+                  }),
                   ),
                 // Studio TV (Office 7) - left: 0.001, top: 0.65
                 if (_showHelpLabels)
                   Positioned(
                     left: 0.001 * screenWidth + 10,
                     top: 0.65 * (screenWidth * 1.5) + 10,
-                    child: _buildHelpLabel('Studio TV'),
+                  child: _buildHelpLabel('Studio TV', onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.studioTv);
+                  }),
                   ),
                 // Exit (Office 8) - left: 0.6, top: 1.09
                 if (_showHelpLabels)
                   Positioned(
                     left: 0.6 * screenWidth + 10,
                     top: 1.09 * (screenWidth * 1.5) + 10,
-                    child: _buildHelpLabel('Exit'),
+                  child: _buildHelpLabel('Exit', onTap: () {
+                    Navigator.of(context).pop();
+                  }),
                   ),
                 // HR Office (Office 9) - left: 0.60, top: 0.65
                 if (_showHelpLabels)
                   Positioned(
                     left: 0.60 * screenWidth + 10,
                     top: 0.65 * (screenWidth * 1.5) + 10,
-                    child: _buildHelpLabel('HR Office'),
+                  child: _buildHelpLabel('HR Office', onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.hrOffice);
+                  }),
                   ),
                 // Shaddy avatar with chat bubble
                 if (_showShaddyAvatar)

@@ -370,47 +370,50 @@ class _ManCaveScreenState extends State<ManCaveScreen> {
   }
 
   /// Build a help label widget (same design as marketplace labels)
-  Widget _buildHelpLabel(String text) {
+  Widget _buildHelpLabel(String text, {VoidCallback? onTap}) {
     return AnimatedOpacity(
       opacity: _showHelpLabels ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 300),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.5),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+      child: GestureDetector(
+        onTap: _showHelpLabels ? onTap : null,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 1,
                 ),
-              ],
-            ),
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withOpacity(0.7),
-                    offset: const Offset(1, 1),
-                    blurRadius: 3,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.7),
+                      offset: const Offset(1, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
@@ -460,21 +463,21 @@ class _ManCaveScreenState extends State<ManCaveScreen> {
             Positioned(
               left: overlay1Left,
               top: overlay1Top,
-              child: _buildHelpLabel('All Cards'),
+              child: _buildHelpLabel('All Cards', onTap: _fetchAndShowCards),
             ),
           // Help label for Overlay 2 (Rookie Draft)
           if (_showHelpLabels)
             Positioned(
               left: overlay2Left,
               top: overlay2Top,
-              child: _buildHelpLabel('Rookie Draft'),
+              child: _buildHelpLabel('Rookie Draft', onTap: _performRookieDraft),
             ),
           // Help label for Overlay 3 (Weekly)
           if (_showHelpLabels)
             Positioned(
               left: overlay3Left,
               top: overlay3Top,
-              child: _buildHelpLabel('Weekly'),
+              child: _buildHelpLabel('Weekly', onTap: _showWeeklyDialog),
             ),
           // Top stats strip
           const TopStatsStrip(),

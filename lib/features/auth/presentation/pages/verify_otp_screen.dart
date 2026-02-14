@@ -96,8 +96,11 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
             await AuthStorageService.saveSelectedTeam(team.id);
           }
         } catch (e) {
+          // Log the error so we can debug why team images aren't caching
+          debugPrint('⚠️ Failed to fetch/cache favorite teams: $e');
+          debugPrint('→ User will see asset team logos as fallback');
           // Continue even if favorite teams fetch fails
-          // User can still access the app
+          // User can still access the app with asset-based team logos
         }
 
         if (mounted) {

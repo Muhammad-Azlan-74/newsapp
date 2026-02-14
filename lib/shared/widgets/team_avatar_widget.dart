@@ -136,8 +136,32 @@ class _TeamAvatarWidgetState extends State<TeamAvatarWidget> {
   }
 
   String _getTeamAssetLogo(String teamIdOrName) {
-    // Team logos removed - return app logo as fallback
-    return AppAssets.appLogo;
+    // Handle team IDs
+    switch (teamIdOrName) {
+      case '6947a3a8d9ba1ed105c021c1':
+        return AppAssets.chiefsLogo;
+      case '6947a3a8d9ba1ed105c021c2':
+        return AppAssets.broncosLogo;
+      case '6947a3a8d9ba1ed105c021c3':
+        return AppAssets.raidersLogo;
+      case '6947a3a8d9ba1ed105c021c4':
+        return AppAssets.chargersLogo;
+    }
+
+    // Handle team names (legacy support)
+    switch (teamIdOrName) {
+      case 'Kansas City Chiefs':
+        return AppAssets.chiefsLogo;
+      case 'Denver Broncos':
+        return AppAssets.broncosLogo;
+      case 'Las Vegas Raiders':
+        return AppAssets.raidersLogo;
+      case 'Los Angeles Chargers':
+        return AppAssets.chargersLogo;
+      default:
+        // Fallback to app logo only if no team match
+        return AppAssets.appLogo;
+    }
   }
 
   @override

@@ -735,47 +735,50 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
   }
 
   /// Build a help label widget (same design as mancave labels)
-  Widget _buildHelpLabel(String text) {
+  Widget _buildHelpLabel(String text, {VoidCallback? onTap}) {
     return AnimatedOpacity(
       opacity: _showLabels ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 300),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.5),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+      child: GestureDetector(
+        onTap: _showLabels ? onTap : null,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 1,
                 ),
-              ],
-            ),
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withOpacity(0.7),
-                    offset: const Offset(1, 1),
-                    blurRadius: 3,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.7),
+                      offset: const Offset(1, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
@@ -841,31 +844,70 @@ class _ConferenceRoomScreenState extends State<ConferenceRoomScreen> {
             Positioned(
               left: overlay4Left,
               top: overlay4Top,
-              child: _buildHelpLabel('Attack\nHistory'),
+              child: _buildHelpLabel('Attack\nHistory', onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MatchesHistoryScreen(
+                      allowedFilters: [null, 'attack'],
+                    ),
+                  ),
+                );
+              }),
             ),
             // Overlay 5 - Defense History
             Positioned(
               left: overlay5Left,
               top: overlay5Top,
-              child: _buildHelpLabel('Defense\nHistory'),
+              child: _buildHelpLabel('Defense\nHistory', onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MatchesHistoryScreen(
+                      allowedFilters: [null, 'defense'],
+                    ),
+                  ),
+                );
+              }),
             ),
             // Overlay 6 - Attack Lineup
             Positioned(
               left: overlay6Left,
               top: overlay6Top,
-              child: _buildHelpLabel('Attack\nLineup'),
+              child: _buildHelpLabel('Attack\nLineup', onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AttackLineupViewScreen(),
+                  ),
+                );
+              }),
             ),
             // Overlay 7 - Defense Lineup
             Positioned(
               left: overlay7Left,
               top: overlay7Top,
-              child: _buildHelpLabel('Defense\nLineup'),
+              child: _buildHelpLabel('Defense\nLineup', onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DefenseLineupViewScreen(),
+                  ),
+                );
+              }),
             ),
             // Overlay 8 - Choose Opponent
             Positioned(
               left: overlay8Left,
               top: overlay8Top,
-              child: _buildHelpLabel('Choose\nOpponent'),
+              child: _buildHelpLabel('Choose\nOpponent', onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ConferenceRoomUsersScreen(),
+                  ),
+                );
+              }),
             ),
           ],
           // Top stats strip
